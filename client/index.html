@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DobroPost AI">
+  <link rel="manifest" href="/manifest.json">
+  <title>DobroPost AI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+:root{
+  --bg:#0F1117;--bg2:#1A1D27;--bg3:#21253A;--bg4:#2A2F45;
+  --acc:#C8FF57;--acc2:#A8E040;--acc-dim:rgba(200,255,87,0.12);--acc-dim2:rgba(200,255,87,0.06);
+  --txt:#F0F2FF;--txt2:#8B90A8;--txt3:#555A72;
+  --bdr:rgba(255,255,255,0.07);--bdr2:rgba(255,255,255,0.12);
+  --red:#FF5A5A;--orange:#FF8C42;--green:#4ADE80;--blue:#60A5FA;--purple:#A78BFA;
+  --r4:4px;--r8:8px;--r12:12px;
+  --font-sans:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Roboto,sans-serif;
+  --font-mono:'JetBrains Mono','Fira Code','SF Mono',monospace;
+}
+.dash{display:flex;height:100dvh;background:var(--bg);overflow:hidden;font-family:var(--font-sans);font-size:13px;color:var(--txt)}
+.sidebar{width:220px;background:var(--bg2);display:flex;flex-direction:column;border-right:0.5px solid var(--bdr);flex-shrink:0}
+.sb-logo{padding:20px 18px 16px;border-bottom:0.5px solid var(--bdr)}
+.sb-logo-mark{font-size:14px;font-weight:500;color:var(--acc);letter-spacing:-0.3px}
+.sb-logo-sub{font-size:10px;color:var(--txt3);margin-top:2px}
+.sb-nav{padding:8px 0;flex:1;overflow-y:auto}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 18px;cursor:pointer;color:var(--txt2);border-left:2px solid transparent;transition:all .15s;font-size:12.5px;user-select:none}
+.sb-item:hover{color:var(--txt);background:rgba(255,255,255,0.04)}
+.sb-item.active{color:var(--acc);background:var(--acc-dim2);border-left-color:var(--acc)}
+.sb-item i{font-size:15px;flex-shrink:0}
+.sb-divider{height:0.5px;background:var(--bdr);margin:6px 0}
+.sb-footer{padding:12px 18px;border-top:0.5px solid var(--bdr)}
+.topbar{height:52px;background:var(--bg2);border-bottom:0.5px solid var(--bdr);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0}
+.tb-logo{font-size:14px;font-weight:500;color:var(--acc);margin-right:auto}
+.tb-pill{display:flex;align-items:center;gap:5px;background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--txt2)}
+.tb-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.tb-dot.warn{background:var(--orange)}
+.tb-bell{position:relative;cursor:pointer;color:var(--txt2)}
+.tb-badge{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:9px;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.tb-avatar{width:30px;height:30px;border-radius:50%;background:var(--acc-dim);border:1.5px solid var(--acc);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--acc);font-weight:500}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.content{flex:1;overflow-y:auto;padding:20px}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.statusbar{height:34px;background:var(--bg2);border-top:0.5px solid var(--bdr);display:flex;align-items:center;padding:0 20px;gap:20px;flex-shrink:0}
+.sb-stat{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt2)}
+.sb-stat span.v{color:var(--txt)}
+.sb-stat .dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
+
+/* Layout helpers */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:var(--r12);padding:16px}
+.card-title{font-size:10px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:12px}
+.field-group{margin-bottom:12px}
+.form-label{font-size:11.5px;color:var(--txt2);margin-bottom:5px;display:block}
+.form-textarea{width:100%;background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--r8);padding:10px;color:var(--txt);font-size:12.5px;font-family:var(--font-sans);resize:none;outline:none;line-height:1.5}
+.form-textarea:focus{border-color:var(--acc)}
+.form-input{width:100%;background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--r8);padding:8px 10px;color:var(--txt);font-size:12.5px;font-family:var(--font-sans);outline:none}
+.form-input:focus{border-color:var(--acc)}
+.input-row{display:flex;gap:7px}
+
+/* Buttons */
+.btn{border:0.5px solid var(--bdr2);background:var(--bg3);color:var(--txt);border-radius:var(--r8);padding:6px 12px;font-size:11.5px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .12s;font-family:var(--font-sans)}
+.btn:hover{background:var(--bg4)}
+.btn:disabled{opacity:0.45;pointer-events:none}
+.btn-primary{background:var(--acc);color:#0F1117;border-color:transparent;font-weight:600}
+.btn-primary:hover{background:var(--acc2)}
+.btn-danger{background:rgba(255,90,90,0.1);color:var(--red);border-color:rgba(255,90,90,0.2)}
+.btn-full{width:100%;justify-content:center;padding:10px}
+
+/* Spinner (used in btn innerHTML) */
+.spinner{width:14px;height:14px;border:2px solid rgba(0,0,0,0.2);border-top-color:currentColor;border-radius:50%;animation:spin .65s linear infinite;display:inline-block;flex-shrink:0}
+.btn-primary .spinner{border:2px solid rgba(0,0,0,0.2);border-top-color:#0F1117}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Subject/meta cards */
+.subject-card{background:var(--bg3);border-radius:var(--r8);padding:10px 12px;margin-bottom:8px}
+.subj-label{font-size:10px;color:var(--txt3);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px}
+.subj-val{font-size:12.5px;color:var(--txt)}
+
+/* Result meta rows (used by images.js innerHTML) */
+.meta-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--bdr);font-size:12px}
+.meta-row:last-child{border:none}
+.meta-label,.meta-key{color:var(--txt3)}
+.meta-value,.meta-val{color:var(--txt);font-weight:500}
+.badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;background:var(--acc-dim);color:var(--acc);border:0.5px solid rgba(200,255,87,0.25)}
+
+/* QA badge */
+.qa-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(74,222,128,0.1);color:var(--green);border:0.5px solid rgba(74,222,128,0.25);border-radius:20px;padding:5px 12px;font-size:11.5px;margin-bottom:10px}
+
+/* CDN URL row */
+.cdn-row{display:flex;align-items:center;gap:7px;background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--r8);padding:7px 10px;margin-bottom:10px}
+.cdn-url{font-family:var(--font-mono);font-size:10px;color:var(--txt2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Email preview iframe */
+.email-preview-wrap{background:#f5f5f5;border-radius:var(--r8);overflow:hidden;margin-bottom:10px}
+.email-preview-wrap iframe{width:100%;height:220px;border:none;display:block}
+
+/* Banner preview */
+.banner-img{width:100%;border-radius:var(--r8);display:block;margin-bottom:10px}
+
+/* Template picker (populated by images.js) */
+#template-picker{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:12px;max-height:180px;overflow-y:auto}
+.tpl-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.tpl-auto{width:100%;height:32px;background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--r8);display:flex;align-items:center;justify-content:center;gap:4px;color:var(--txt2);font-size:10px;transition:all .12s}
+.tpl-auto.active{border-color:var(--acc);background:var(--acc-dim);color:var(--acc)}
+.tpl-thumb{width:100%;height:32px;border-radius:var(--r8);overflow:hidden;border:0.5px solid var(--bdr2);transition:border-color .12s}
+.tpl-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.tpl-thumb.active{border-color:var(--acc)}
+.tpl-label{font-size:9px;color:var(--txt3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+.tpl-label.active{color:var(--acc)}
+
+/* File drop (articles) */
+.file-drop{border:1.5px dashed var(--bdr2);border-radius:var(--r12);padding:32px 20px;text-align:center;cursor:pointer;transition:border-color .15s;margin-bottom:12px;background:var(--bg2)}
+.file-drop:hover,.file-drop.has-file{border-color:var(--acc)}
+
+/* Articles queue */
+.aq-item{background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:var(--r12);padding:14px 16px;margin-bottom:10px}
+.aq-header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.aq-name{font-size:13px;font-weight:500;color:var(--txt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aq-status{font-size:12px;font-weight:500;white-space:nowrap}
+.aq-preview{font-size:11px;color:var(--txt2);display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.aq-prev-row b{color:var(--txt)}
+.aq-log{font-size:10px;color:var(--txt2);background:var(--bg3);border-radius:var(--r8);padding:6px 8px;margin-top:6px;display:flex;flex-direction:column;gap:1px;max-height:80px;overflow-y:auto;font-family:var(--font-mono)}
+.aq-error{font-size:11px;color:var(--red);margin-top:6px;background:rgba(255,90,90,0.08);border-radius:var(--r8);padding:6px 8px}
+.aq-link{display:inline-block;margin-top:6px;font-size:12px;color:var(--acc);font-weight:500;text-decoration:none}
+
+/* Empty state panels */
+.empty-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;text-align:center;background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:var(--r12)}
+.empty-panel i{font-size:40px;color:var(--txt3);margin-bottom:12px}
+.empty-panel p{font-size:12.5px;color:var(--txt3);line-height:1.6}
+
+/* Command center (home) */
+.stat-pills{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.stat-pill{background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:var(--r8);padding:10px 16px;display:flex;align-items:center;gap:10px}
+.stat-pill-n{font-size:20px;font-weight:500;color:var(--txt)}
+.stat-pill-l{font-size:11px;color:var(--txt2)}
+.task-list{display:flex;flex-direction:column;gap:10px}
+.task-card{background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:var(--r12);padding:14px 16px;border-left:3px solid var(--bdr2);cursor:grab}
+.task-card.priority{border-left-color:var(--acc)}
+.task-card.inprog{border-left-color:var(--blue)}
+.task-card.done{border-left-color:var(--green)}
+.task-card.analyzing{border-left-color:var(--txt3);opacity:0.75}
+.task-card.dragging{border-color:var(--acc);background:var(--bg3);transform:rotate(1.5deg);opacity:0.88}
+.drop-indicator{height:2px;background:var(--acc);border-radius:1px;margin:2px 0}
+.task-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.task-num{font-size:11px;color:var(--txt3);font-weight:500}
+.task-badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
+.badge-letter{background:rgba(200,255,87,0.1);color:var(--acc);border:0.5px solid rgba(200,255,87,0.25)}
+.badge-banner{background:rgba(96,165,250,0.12);color:var(--blue);border:0.5px solid rgba(96,165,250,0.25)}
+.badge-article{background:rgba(167,139,250,0.12);color:var(--purple);border:0.5px solid rgba(167,139,250,0.25)}
+.badge-unknown{background:var(--bg4);color:var(--txt2);border:0.5px solid var(--bdr2)}
+.task-source{font-size:11px;color:var(--txt3);margin-left:auto;display:flex;align-items:center;gap:4px}
+.task-title{font-size:13.5px;font-weight:500;color:var(--txt);margin-bottom:8px}
+.tz-preview{background:var(--bg3);border-radius:var(--r8);padding:9px 11px;margin-bottom:10px;font-size:11.5px;color:var(--txt2);display:grid;grid-template-columns:1fr 1fr;gap:3px 16px}
+.tz-row{display:flex;gap:5px}
+.tz-key{color:var(--txt3)}
+.tz-val{color:var(--txt)}
+.task-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txt2);margin-bottom:8px}
+.spin{animation:spin 1.2s linear infinite;display:inline-block}
+.progress-wrap{height:4px;background:var(--bg4);border-radius:2px;margin-bottom:8px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px}
+.task-actions{display:flex;gap:7px;flex-wrap:wrap}
+.task-meta{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.task-prio-sel{background:var(--bg3);border:0.5px solid var(--bdr2);color:var(--txt2);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;transition:all .15s}
+.task-prio-sel:hover{border-color:var(--acc);color:var(--txt)}
+.task-prio-sel.prio-high{color:var(--red);background:rgba(255,90,90,0.08);border-color:rgba(255,90,90,0.25)}
+.task-prio-sel.prio-low{color:var(--blue);background:rgba(96,165,250,0.08);border-color:rgba(96,165,250,0.25)}
+.task-deadline{display:flex;align-items:center;gap:6px}
+.task-date-inp{background:var(--bg3);border:0.5px solid var(--bdr2);color:var(--txt2);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;outline:none;font-family:var(--font-sans);color-scheme:dark;transition:border-color .15s}
+.task-date-inp:hover,.task-date-inp:focus{border-color:var(--acc)}
+.dl-badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap}
+.dl-overdue{background:rgba(255,90,90,0.15);color:var(--red)}
+.dl-today{background:rgba(255,140,66,0.15);color:var(--orange)}
+.dl-soon{background:rgba(253,189,64,0.12);color:#FDBD40}
+.dl-ok{background:rgba(74,222,128,0.1);color:var(--green)}
+.status-sel{background:transparent;border:0.5px solid var(--bdr2);border-radius:20px;padding:3px 10px 3px 8px;font-size:11.5px;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;transition:all .15s;font-family:var(--font-sans)}
+.status-sel:hover{border-color:var(--bdr2);opacity:0.9}
+.ss-analyzing{color:var(--txt3);background:rgba(255,255,255,0.04);border-color:var(--bdr)}
+.ss-pending{color:var(--acc);background:var(--acc-dim);border-color:rgba(200,255,87,0.2)}
+.ss-inprog{color:var(--blue);background:rgba(96,165,250,0.1);border-color:rgba(96,165,250,0.2)}
+.ss-done{color:var(--green);background:rgba(74,222,128,0.1);border-color:rgba(74,222,128,0.2)}
+.ss-error{color:var(--red);background:rgba(255,90,90,0.1);border-color:rgba(255,90,90,0.2)}
+
+/* Monitor */
+.mon-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.mon-card{background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:var(--r12);padding:14px}
+.mon-card-title{font-size:11px;font-weight:500;color:var(--txt2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.mon-big{font-size:22px;font-weight:500;color:var(--txt);margin-bottom:4px}
+.mon-sub{font-size:11px;color:var(--txt3)}
+.mon-bar-wrap{height:5px;background:var(--bg4);border-radius:2px;margin:8px 0;overflow:hidden}
+.mon-bar-fill{height:100%;border-radius:2px}
+.mon-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:0.5px solid var(--bdr);font-size:12px}
+.mon-row:last-child{border:none}
+.mon-key{color:var(--txt3)}
+.mon-val{color:var(--txt);font-weight:500}
+.sparkline-section{display:flex;gap:14px;margin-top:10px}
+.sparkline-col{flex:1}
+.sparkline-label{font-size:10px;color:var(--txt3);margin-bottom:5px}
+.sparkline-bars{display:flex;align-items:flex-end;gap:3px;height:32px}
+.sparkline-bar{flex:1;border-radius:2px 2px 0 0}
+.act-chart{display:flex;align-items:flex-end;gap:10px;height:72px;margin-bottom:8px}
+.sec-label{font-size:10px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:10px}
+.notif-feed{display:flex;flex-direction:column;gap:8px}
+.notif{display:flex;align-items:center;gap:10px;background:var(--bg2);border:0.5px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:12px}
+.ndot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.notif-time{color:var(--txt3);flex-shrink:0}
+
+/* Agent/chat */
+.agent-card{background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--r12);padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.agent-avi{width:42px;height:42px;border-radius:var(--r8);background:var(--acc-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.agent-name{font-size:14px;font-weight:500;color:var(--txt);margin-bottom:2px}
+.agent-model{font-size:11px;color:var(--txt3)}
+.agent-status-pill{margin-left:auto;background:rgba(74,222,128,0.1);color:var(--green);border:0.5px solid rgba(74,222,128,0.25);border-radius:20px;padding:3px 10px;font-size:11px;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.chat-wrap{background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--r12);padding:14px;margin-bottom:12px;max-height:320px;overflow-y:auto}
+.chat-bubble-user{background:var(--acc-dim);border:0.5px solid rgba(200,255,87,0.2);border-radius:12px;border-bottom-right-radius:3px;padding:10px 14px;max-width:70%;font-size:12.5px;color:var(--txt);margin-left:auto;margin-bottom:10px}
+.chat-bubble-ai{background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:12px;border-bottom-left-radius:3px;padding:10px 14px;font-size:12.5px;color:var(--txt);margin-bottom:6px}
+.chat-input-row{display:flex;gap:8px;margin-top:10px}
+.chat-toolbar{display:flex;gap:8px;margin-bottom:8px}
+
+/* QA report */
+.qa-report{background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--r12);padding:13px;margin-bottom:10px}
+.qa-report-title{font-size:12px;font-weight:500;color:var(--txt);margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid var(--bdr)}
+.qa-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;border-bottom:0.5px solid var(--bdr)}
+.qa-row:last-child{border:none}
+.qa-row.ok{color:var(--green)}
+.qa-row.warn-qa{color:var(--orange)}
+.qa-verdict{margin-top:10px;padding:8px 10px;background:rgba(255,140,66,0.08);border:0.5px solid rgba(255,140,66,0.2);border-radius:var(--r8);font-size:12px;font-weight:500;color:var(--orange)}
+
+/* History */
+.hist-filter{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.hist-input{flex:1;min-width:100px;background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--r8);padding:7px 10px;color:var(--txt);font-size:12px;outline:none;font-family:var(--font-sans)}
+.hist-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.hist-table th{text-align:left;color:var(--txt3);font-weight:500;font-size:10.5px;text-transform:uppercase;letter-spacing:0.5px;padding:8px 10px;border-bottom:0.5px solid var(--bdr2)}
+.hist-table td{padding:9px 10px;border-bottom:0.5px solid var(--bdr);color:var(--txt);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-table tr:last-child td{border:none}
+.hist-table tr:hover td{background:var(--bg3)}
+.hist-icon{width:30px;height:30px;border-radius:var(--r8);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.status-sent{color:var(--green);background:rgba(74,222,128,0.1);border-radius:20px;padding:2px 9px;font-size:11px;border:0.5px solid rgba(74,222,128,0.2)}
+.status-draft{color:var(--blue);background:rgba(96,165,250,0.1);border-radius:20px;padding:2px 9px;font-size:11px;border:0.5px solid rgba(96,165,250,0.2)}
+.status-archive{color:var(--txt3);background:var(--bg3);border-radius:20px;padding:2px 9px;font-size:11px;border:0.5px solid var(--bdr)}
+
+/* Settings */
+.sett-section{margin-bottom:22px}
+.sett-title{font-size:12px;font-weight:500;color:var(--txt);margin-bottom:12px;padding-bottom:8px;border-bottom:0.5px solid var(--bdr);display:flex;align-items:center;gap:7px}
+.sett-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.sett-key{font-size:12px;color:var(--txt2);width:180px;flex-shrink:0}
+.sett-input-wrap{flex:1;position:relative}
+.sett-input{width:100%;background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--r8);padding:7px 32px 7px 10px;color:var(--txt);font-size:12px;font-family:var(--font-mono);outline:none}
+.sett-input:focus{border-color:var(--acc)}
+.sett-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--txt3);cursor:pointer;font-size:14px}
+.sett-select{width:100%;background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--r8);padding:7px 10px;color:var(--txt);font-size:12px;outline:none;font-family:var(--font-sans)}
+.sett-number{background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:var(--r8);padding:7px 10px;color:var(--txt);font-size:12px;width:80px;outline:none;font-family:var(--font-sans)}
+.toggle{width:36px;height:20px;border-radius:10px;background:var(--acc);border:none;cursor:pointer;position:relative;flex-shrink:0}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;background:#0F1117;border-radius:50%;top:3px;right:3px}
+
+/* Telegram */
+.tg-header{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:0.5px solid var(--bdr);margin-bottom:14px}
+.tg-avi{width:36px;height:36px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center}
+.tg-name{font-size:13px;font-weight:500;color:var(--txt)}
+.tg-status{font-size:11px;color:var(--green)}
+.bubble-in{background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:12px;border-bottom-left-radius:3px;padding:10px 14px;max-width:80%;font-size:13px;color:var(--txt);align-self:flex-start}
+.bubble-time{font-size:10px;color:var(--txt3);margin-top:3px;padding-left:2px}
+.tz-card-tg{background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:var(--r12);padding:13px;border-left:3px solid var(--acc)}
+.tz-card-header{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.tz-badge{background:var(--acc-dim);color:var(--acc);font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;border:0.5px solid rgba(200,255,87,0.3)}
+.tz-note{font-size:11.5px;color:var(--txt3);margin-top:9px;padding-top:9px;border-top:0.5px solid var(--bdr)}
+
+/* Toast */
+.toast{position:fixed;bottom:50px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--bg4);color:var(--txt);border:0.5px solid var(--bdr2);padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap;z-index:1000}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* WIP — заглушки */
+.wip-banner{background:rgba(255,140,66,0.08);border:0.5px solid rgba(255,140,66,0.25);border-radius:var(--r8);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--orange)}
+.wip-badge{font-size:9px;font-weight:600;background:rgba(255,140,66,0.12);color:var(--orange);border:0.5px solid rgba(255,140,66,0.3);border-radius:20px;padding:1px 7px;margin-left:6px;vertical-align:middle;white-space:nowrap}
+
+/* Log lines (articles progress) */
+.log-wrap{background:var(--bg3);border-radius:var(--r8);padding:10px 12px;font-family:var(--font-mono);font-size:11px;margin-bottom:12px}
+.log-line{color:var(--txt2);padding:2px 0;display:flex;align-items:center;gap:7px}
+.log-line.done{color:var(--green)}
+.log-line.active-log{color:var(--orange)}
+.log-line.wait{color:var(--txt3)}
+</style>
+</head>
+<body>
+<div class="dash">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">DobroPost AI</div>
+      <div class="sb-logo-sub">Automation Hub v3.0</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-item active" onclick="nav('home',this)"><i class="ti ti-home"></i>Главная</div>
+      <div class="sb-item" onclick="nav('letters',this)"><i class="ti ti-mail"></i>Письма</div>
+      <div class="sb-item" onclick="nav('banners',this)"><i class="ti ti-photo"></i>Баннеры</div>
+      <div class="sb-item" onclick="nav('articles',this)"><i class="ti ti-file-text"></i>Статьи</div>
+      <div class="sb-item" onclick="nav('telegram',this)"><i class="ti ti-brand-telegram"></i>Telegram</div>
+      <div class="sb-divider"></div>
+      <div class="sb-item" onclick="nav('ai',this)"><i class="ti ti-brain"></i>Главный ИИ</div>
+      <div class="sb-item" onclick="nav('tester',this)"><i class="ti ti-flask"></i>Тестировщик</div>
+      <div class="sb-divider"></div>
+      <div class="sb-item" onclick="nav('history',this)"><i class="ti ti-history"></i>История</div>
+      <div class="sb-item" onclick="nav('monitor',this)"><i class="ti ti-activity"></i>Мониторинг</div>
+      <div class="sb-item" onclick="nav('settings',this)"><i class="ti ti-settings"></i>Настройки</div>
+    </nav>
+    <div class="sb-footer">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--acc-dim);border:1.5px solid var(--acc);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--acc);font-weight:500">ВЛ</div>
+        <div><div style="font-size:12px;color:var(--txt)">Влад</div><div style="font-size:10px;color:var(--txt3)">Менеджер</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-logo">DobroPost AI</div>
+      <div class="tb-pill"><span class="tb-dot"></span>Сервер</div>
+      <div class="tb-pill"><span class="tb-dot"></span>OpenAI</div>
+      <div class="tb-pill"><span class="tb-dot"></span>Sendsay</div>
+      <div class="tb-pill"><span class="tb-dot warn"></span>TG Bot</div>
+      <div class="tb-bell" style="margin-left:8px"><i class="ti ti-bell" style="font-size:18px"></i><div class="tb-badge">2</div></div>
+      <div class="tb-avatar">ВЛ</div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══════════════════════════════════════════════
+           TAB: ГЛАВНАЯ — COMMAND CENTER
+      ══════════════════════════════════════════════ -->
+      <div class="tab-panel active" id="tab-home">
+        <div class="stat-pills">
+          <div class="stat-pill"><i class="ti ti-clipboard-list" style="font-size:18px;color:var(--acc)"></i><div><div class="stat-pill-n" id="cnt-new">0</div><div class="stat-pill-l">Новых</div></div></div>
+          <div class="stat-pill"><i class="ti ti-loader-2" style="font-size:18px;color:var(--blue)"></i><div><div class="stat-pill-n" id="cnt-inprog">0</div><div class="stat-pill-l">В работе</div></div></div>
+          <div class="stat-pill"><i class="ti ti-circle-check" style="font-size:18px;color:var(--green)"></i><div><div class="stat-pill-n" id="cnt-done">0</div><div class="stat-pill-l">Готовых</div></div></div>
+          <div style="margin-left:auto;font-size:11.5px;color:var(--txt3);display:flex;align-items:center;gap:6px"><i class="ti ti-arrows-up-down" style="font-size:14px"></i>Перетащите для приоритета</div>
+        </div>
+        <div class="task-list" id="task-list">
+          <div class="empty-panel" id="tasks-empty" style="border-style:dashed">
+            <i class="ti ti-clipboard-list"></i>
+            <p>Задач пока нет.<br>Они будут появляться здесь из Telegram.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+           TAB: ПИСЬМА
+      ══════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-letters">
+        <div class="two-col">
+          <!-- Input -->
+          <div class="card">
+            <div class="card-title">Входные данные</div>
+            <div class="field-group">
+              <label class="form-label">Текст письма</label>
+              <textarea class="form-textarea" id="letter-text-email" rows="9" placeholder="Вставьте текст письма…"></textarea>
+            </div>
+            <div class="field-group">
+              <label class="form-label">URL баннера <span style="color:var(--txt3)">(необязательно)</span></label>
+              <div class="input-row">
+                <input class="form-input" id="letter-banner-url" type="url" placeholder="https://eimage.sendsay.ru/…">
+                <button class="btn" id="sendsay-upload-btn" onclick="document.getElementById('sendsay-file-input').click()" title="Загрузить в Sendsay">
+                  <i class="ti ti-upload" style="font-size:13px"></i>
+                </button>
+                <input type="file" id="sendsay-file-input" accept="image/*" style="display:none" onchange="uploadBannerToSendsay(this)">
+              </div>
+            </div>
+            <button class="btn btn-primary btn-full" id="layout-btn" onclick="layoutLetter()">
+              Сверстать письмо <i class="ti ti-arrow-right" style="font-size:13px"></i>
+            </button>
+          </div>
+          <!-- Result -->
+          <div>
+            <div id="letter-empty-state" class="empty-panel">
+              <i class="ti ti-mail"></i>
+              <p>Вставьте текст письма<br>и нажмите «Сверстать»</p>
+            </div>
+            <div class="card" id="letter-result-card" style="display:none">
+              <div class="card-title">Результат</div>
+              <div class="subject-card">
+                <div class="subj-label">Тема письма</div>
+                <div class="subj-val" id="letter-subject"></div>
+              </div>
+              <div class="subject-card">
+                <div class="subj-label">Прехедер</div>
+                <div class="subj-val" id="letter-preheader" style="color:var(--txt2);font-weight:400"></div>
+              </div>
+              <div class="email-preview-wrap">
+                <iframe id="letter-preview" sandbox="allow-same-origin"></iframe>
+              </div>
+              <div class="qa-badge"><i class="ti ti-shield-check" style="font-size:13px"></i>QA пройден — 2 линии проверки</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <button class="btn" onclick="copyLetterHtml()" style="flex:1;justify-content:center">
+                  <i class="ti ti-copy" style="font-size:12px"></i>Скопировать HTML
+                </button>
+                <button class="btn" onclick="downloadLetterHtml()" style="flex:1;justify-content:center">
+                  <i class="ti ti-download" style="font-size:12px"></i>Скачать .html
+                </button>
+              </div>
+              <button class="btn btn-primary btn-full" id="sendsay-draft-btn" onclick="loadDraftToSendsay()">
+                <i class="ti ti-cloud-upload" style="font-size:12px"></i>Создать черновик в Sendsay
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+           TAB: БАННЕРЫ
+      ══════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-banners">
+        <div class="two-col">
+          <!-- Input -->
+          <div class="card">
+            <div class="card-title">Шаблон</div>
+            <div id="template-picker"></div>
+            <div class="card-title" style="margin-top:4px">Текст письма</div>
+            <div class="field-group">
+              <textarea class="form-textarea" id="letter-text" rows="7" placeholder="Вставьте текст письма — AI подберёт заголовок и подпись…"></textarea>
+            </div>
+            <button class="btn btn-primary btn-full" id="generate-btn" onclick="generateBanner()">
+              <i class="ti ti-sparkles" style="font-size:13px"></i>Сгенерировать баннер
+            </button>
+          </div>
+          <!-- Result -->
+          <div>
+            <div id="banner-empty-state" class="empty-panel">
+              <i class="ti ti-photo"></i>
+              <p>Выберите шаблон и вставьте<br>текст письма, затем нажмите<br>«Сгенерировать баннер»</p>
+            </div>
+            <div class="card" id="result-card" style="display:none">
+              <div class="card-title">Результат</div>
+              <img class="banner-img" id="result-img" src="" alt="Баннер">
+              <div id="result-meta"></div>
+              <div class="cdn-row" id="sendsay-url-block" style="display:none">
+                <i class="ti ti-link" style="font-size:13px;color:var(--txt3);flex-shrink:0"></i>
+                <span class="cdn-url" id="sendsay-cdn-url"></span>
+                <button class="btn" onclick="copySendsayUrl()" style="padding:4px 8px" title="Скопировать">
+                  <i class="ti ti-copy" style="font-size:12px"></i>
+                </button>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn" onclick="downloadBanner()" style="flex:1;justify-content:center">
+                  <i class="ti ti-download" style="font-size:12px"></i>Скачать PNG
+                </button>
+                <button class="btn btn-primary" id="upload-sendsay-btn" onclick="uploadGeneratedBannerToSendsay()" style="flex:1;justify-content:center">
+                  <i class="ti ti-cloud-upload" style="font-size:12px"></i>В Sendsay ↑
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+           TAB: СТАТЬИ
+      ══════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-articles">
+        <div class="two-col">
+          <!-- Left: upload -->
+          <div>
+            <div class="file-drop" id="file-drop" onclick="document.getElementById('docx-input').click()">
+              <i class="ti ti-file-upload" style="font-size:32px;color:var(--acc);display:block;margin-bottom:10px"></i>
+              <div style="font-size:14px;color:var(--txt2)">Перетащите DOCX или нажмите</div>
+              <div style="font-size:11.5px;color:var(--txt3);margin-top:4px">Поддержка .docx · до 20 МБ · несколько файлов</div>
+            </div>
+            <input type="file" id="docx-input" accept=".docx" multiple style="display:none" onchange="onDocxSelected(this)">
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" id="articles-run-btn" onclick="runArticlesQueue()" disabled style="flex:1;justify-content:center;padding:10px">
+                <i class="ti ti-player-play" style="font-size:13px"></i>Запустить все
+              </button>
+              <button class="btn btn-danger" onclick="clearArticlesQueue()" style="padding:10px 14px" title="Очистить очередь">
+                <i class="ti ti-trash" style="font-size:14px"></i>
+              </button>
+            </div>
+          </div>
+          <!-- Right: queue -->
+          <div>
+            <div id="articles-queue-empty" class="empty-panel" style="margin-bottom:0">
+              <i class="ti ti-file-text"></i>
+              <p>Добавьте DOCX файлы<br>для загрузки в CRM</p>
+            </div>
+            <div id="articles-queue"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+           TAB: TELEGRAM
+      ══════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-telegram">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500">
+            <i class="ti ti-brand-telegram" style="font-size:16px;color:var(--blue)"></i>
+            Входящие от бота
+          </div>
+          <span style="font-size:11px;color:var(--txt3)" id="tg-count">Нет сообщений</span>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button class="btn" onclick="tgFilter('all')" id="tgf-all" style="font-size:11px;background:var(--acc-dim);color:var(--acc)">Все</button>
+            <button class="btn" onclick="tgFilter('pending')" id="tgf-pending" style="font-size:11px">Очередь</button>
+            <button class="btn" onclick="tgFilter('done')" id="tgf-done" style="font-size:11px">Готово</button>
+          </div>
+        </div>
+        <div id="tg-feed" style="display:flex;flex-direction:column;gap:10px;max-width:680px"></div>
+        <div id="tg-empty" class="empty-panel" style="border-style:dashed;max-width:680px;display:none">
+          <i class="ti ti-brand-telegram" style="color:var(--blue)"></i>
+          <p>Задач пока нет.<br>Напишите боту в Telegram или перешлите сообщение из рабочего чата.</p>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+           TAB: ГЛАВНЫЙ ИИ
+      ══════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-ai">
+        <div class="wip-banner"><i class="ti ti-tool" style="font-size:14px;flex-shrink:0"></i>Чат с Главным ИИ пока не подключён к бэкенду — это макет интерфейса.</div>
+        <div class="agent-card">
+          <div class="agent-avi"><i class="ti ti-brain" style="font-size:20px;color:var(--acc)"></i></div>
+          <div><div class="agent-name">Главный ИИ</div><div class="agent-model">gpt-4o · Инициализирует задачи, координирует агентов</div></div>
+          <div class="agent-status-pill"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>онлайн</div>
+        </div>
+        <div class="chat-toolbar">
+          <button class="btn"><i class="ti ti-trash" style="font-size:12px"></i>Очистить контекст</button>
+          <button class="btn"><i class="ti ti-download" style="font-size:12px"></i>Экспорт диалога</button>
+        </div>
+        <div class="chat-wrap">
+          <div class="chat-bubble-user">Разбери задачу и поставь в очередь</div>
+          <div class="chat-bubble-ai">
+            <div style="font-size:11px;color:var(--txt3);margin-bottom:7px;display:flex;align-items:center;gap:5px"><i class="ti ti-brain" style="font-size:12px;color:var(--acc)"></i>Главный ИИ</div>
+            <div style="margin-bottom:8px">Разобрал задачу. Структура ТЗ:</div>
+            <div style="background:var(--bg3);border-radius:var(--r8);padding:10px;font-size:12px;border:0.5px solid var(--bdr2)">
+              <div style="font-weight:500;color:var(--acc);margin-bottom:7px;font-size:11px">Задача #3 добавлена в очередь</div>
+              <div class="tz-row" style="margin-bottom:4px"><span class="tz-key">Тип:</span><span class="tz-val">Баннер + Email</span></div>
+              <div class="tz-row" style="margin-bottom:4px"><span class="tz-key">Приоритет:</span><span class="tz-val">#3</span></div>
+              <div class="tz-row"><span class="tz-key">Агент:</span><span class="tz-val">Баннер-агент → Верстальщик</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="form-textarea" rows="2" placeholder="Напишите сообщение…" style="flex:1"></textarea>
+          <button class="btn btn-primary" style="padding:0 16px;align-self:stretch"><i class="ti ti-send" style="font-size:16px"></i></button>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+           TAB: ТЕСТИРОВЩИК
+      ══════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-tester">
+        <div class="wip-banner"><i class="ti ti-tool" style="font-size:14px;flex-shrink:0"></i>Тестировщик пока не подключён к бэкенду — QA работает автоматически при генерации писем.</div>
+        <div class="agent-card">
+          <div class="agent-avi" style="background:rgba(167,139,250,0.12)"><i class="ti ti-flask" style="font-size:20px;color:var(--purple)"></i></div>
+          <div><div class="agent-name">Тестировщик</div><div class="agent-model">gpt-4o · 2 линии проверки: структура + визуал</div></div>
+          <div class="agent-status-pill"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>онлайн</div>
+        </div>
+        <div class="chat-toolbar">
+          <button class="btn"><i class="ti ti-trash" style="font-size:12px"></i>Очистить контекст</button>
+          <button class="btn"><i class="ti ti-download" style="font-size:12px"></i>Экспорт диалога</button>
+        </div>
+        <div class="qa-report">
+          <div class="qa-report-title"><i class="ti ti-clipboard-check" style="font-size:14px;margin-right:6px;color:var(--purple)"></i>QA отчёт — баннер_akciya_001.png</div>
+          <div class="qa-row ok"><i class="ti ti-check" style="font-size:13px"></i>Разрешение 600×350 @2x — OK</div>
+          <div class="qa-row ok"><i class="ti ti-check" style="font-size:13px"></i>Шаблон совпадает с ТЗ — OK</div>
+          <div class="qa-row ok"><i class="ti ti-check" style="font-size:13px"></i>Заголовок: 2 слова, в лимите</div>
+          <div class="qa-row warn-qa"><i class="ti ti-alert-triangle" style="font-size:13px"></i>Подпись: 11 слов (лимит 10)</div>
+          <div class="qa-verdict"><i class="ti ti-alert-circle" style="font-size:13px;margin-right:6px"></i>Вердикт: Принято с замечанием</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button class="btn btn-primary" style="flex:1;justify-content:center"><i class="ti ti-check" style="font-size:12px"></i>Принять</button>
+          <button class="btn" style="flex:1;justify-content:center"><i class="ti ti-refresh" style="font-size:12px"></i>Перегенерировать</button>
+        </div>
+        <div class="chat-wrap">
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:8px">Дайте обратную связь тестировщику:</div>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="form-textarea" rows="2" placeholder="Опишите что не так…" style="flex:1"></textarea>
+          <button class="btn btn-primary" style="padding:0 16px;align-self:stretch"><i class="ti ti-send" style="font-size:16px"></i></button>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+           TAB: ИСТОРИЯ
+      ══════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-history">
+        <div class="wip-banner"><i class="ti ti-tool" style="font-size:14px;flex-shrink:0"></i>История пока статична — реальное логирование задач будет добавлено позже.</div>
+        <div class="hist-filter">
+          <button class="btn" style="background:var(--acc-dim);color:var(--acc);border-color:rgba(200,255,87,0.3)">Все</button>
+          <button class="btn">Письма</button>
+          <button class="btn">Баннеры</button>
+          <button class="btn">Статьи</button>
+          <input class="hist-input" placeholder="Поиск…">
+          <input type="date" class="hist-input" style="max-width:140px" value="2026-01-01">
+          <input type="date" class="hist-input" style="max-width:140px" value="2026-05-15">
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="hist-table">
+            <colgroup><col style="width:40px"><col style="width:76px"><col><col style="width:96px"><col style="width:88px"><col style="width:80px"></colgroup>
+            <thead><tr>
+              <th></th><th>Тип</th><th>Название</th><th>Дата</th><th>Статус</th><th>Действия</th>
+            </tr></thead>
+            <tbody>
+              <tr><td><div class="hist-icon" style="background:var(--acc-dim)"><i class="ti ti-mail" style="font-size:14px;color:var(--acc)"></i></div></td><td><span class="task-badge badge-letter">Письмо</span></td><td>Рассылка про новинки — ноябрь</td><td style="color:var(--txt2)">14 мая 2026</td><td><span class="status-sent">Отправлено</span></td><td><div style="display:flex;gap:4px"><button class="btn" style="padding:4px 7px"><i class="ti ti-eye" style="font-size:11px"></i></button><button class="btn" style="padding:4px 7px"><i class="ti ti-refresh" style="font-size:11px"></i></button><button class="btn btn-danger" style="padding:4px 7px"><i class="ti ti-trash" style="font-size:11px"></i></button></div></td></tr>
+              <tr><td><div class="hist-icon" style="background:rgba(96,165,250,0.1)"><i class="ti ti-photo" style="font-size:14px;color:var(--blue)"></i></div></td><td><span class="task-badge badge-banner">Баннер</span></td><td>Акция на кроссовки −30%</td><td style="color:var(--txt2)">13 мая 2026</td><td><span class="status-draft">Черновик</span></td><td><div style="display:flex;gap:4px"><button class="btn" style="padding:4px 7px"><i class="ti ti-eye" style="font-size:11px"></i></button><button class="btn" style="padding:4px 7px"><i class="ti ti-refresh" style="font-size:11px"></i></button><button class="btn btn-danger" style="padding:4px 7px"><i class="ti ti-trash" style="font-size:11px"></i></button></div></td></tr>
+              <tr><td><div class="hist-icon" style="background:rgba(167,139,250,0.12)"><i class="ti ti-file-text" style="font-size:14px;color:var(--purple)"></i></div></td><td><span class="task-badge badge-article">Статья</span></td><td>Гайд: посылка из Китая</td><td style="color:var(--txt2)">10 мая 2026</td><td><span class="status-sent">Отправлено</span></td><td><div style="display:flex;gap:4px"><button class="btn" style="padding:4px 7px"><i class="ti ti-eye" style="font-size:11px"></i></button><button class="btn" style="padding:4px 7px"><i class="ti ti-refresh" style="font-size:11px"></i></button><button class="btn btn-danger" style="padding:4px 7px"><i class="ti ti-trash" style="font-size:11px"></i></button></div></td></tr>
+              <tr><td><div class="hist-icon" style="background:var(--acc-dim)"><i class="ti ti-mail" style="font-size:14px;color:var(--acc)"></i></div></td><td><span class="task-badge badge-letter">Письмо</span></td><td>Майские акции — подборка</td><td style="color:var(--txt2)">8 мая 2026</td><td><span class="status-archive">Архив</span></td><td><div style="display:flex;gap:4px"><button class="btn" style="padding:4px 7px"><i class="ti ti-eye" style="font-size:11px"></i></button><button class="btn" style="padding:4px 7px"><i class="ti ti-refresh" style="font-size:11px"></i></button><button class="btn btn-danger" style="padding:4px 7px"><i class="ti ti-trash" style="font-size:11px"></i></button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+           TAB: МОНИТОРИНГ
+      ══════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-monitor">
+        <div class="wip-banner"><i class="ti ti-tool" style="font-size:14px;flex-shrink:0"></i>Данные пока статичны — реальный мониторинг балансов и сервера будет добавлен позже.</div>
+        <div class="mon-grid">
+          <div class="mon-card">
+            <div class="mon-card-title"><i class="ti ti-brain" style="font-size:14px;color:var(--acc)"></i>OpenAI API</div>
+            <div class="mon-big">$12.40</div>
+            <div class="mon-sub">Использовано $7.60 из $20</div>
+            <div class="mon-bar-wrap"><div class="mon-bar-fill" style="width:62%;background:var(--orange)"></div></div>
+            <div style="font-size:11px;color:var(--orange);display:flex;align-items:center;gap:5px;margin-top:4px"><i class="ti ti-alert-triangle" style="font-size:12px"></i>Предупреждение при менее $5</div>
+          </div>
+          <div class="mon-card">
+            <div class="mon-card-title"><i class="ti ti-server" style="font-size:14px;color:var(--blue)"></i>Хостинг RUVDS</div>
+            <div class="mon-big" style="color:var(--green)">Активен</div>
+            <div class="mon-sub">Оплачен до 15 июня 2026</div>
+            <div style="font-size:12px;color:var(--txt2);margin-top:8px">Осталось <span style="color:var(--txt);font-weight:500">31 день</span></div>
+            <div style="font-size:11px;color:var(--blue);margin-top:6px;display:flex;align-items:center;gap:5px"><i class="ti ti-bell" style="font-size:12px"></i>Напомнить за 7 дней</div>
+          </div>
+          <div class="mon-card">
+            <div class="mon-card-title"><i class="ti ti-mail" style="font-size:14px;color:var(--acc)"></i>Sendsay</div>
+            <div class="mon-row"><span class="mon-key">Статус</span><span style="color:var(--green);font-weight:500">Подключён</span></div>
+            <div class="mon-row"><span class="mon-key">Загружено файлов</span><span class="mon-val">47</span></div>
+            <div class="mon-row"><span class="mon-key">Черновиков создано</span><span class="mon-val">23</span></div>
+          </div>
+          <div class="mon-card">
+            <div class="mon-card-title"><i class="ti ti-brand-telegram" style="font-size:14px;color:var(--blue)"></i>Telegram бот</div>
+            <div class="mon-row"><span class="mon-key">Статус</span><span style="color:var(--green);font-weight:500">Онлайн (polling)</span></div>
+            <div class="mon-row"><span class="mon-key">Обработано задач</span><span class="mon-val">12</span></div>
+            <div class="mon-row"><span class="mon-key">Последняя активность</span><span style="color:var(--txt2)">2 мин назад</span></div>
+          </div>
+          <div class="mon-card">
+            <div class="mon-card-title"><i class="ti ti-cpu" style="font-size:14px;color:var(--purple)"></i>Сервер</div>
+            <div class="mon-row"><span class="mon-key">CPU</span><span class="mon-val">23%</span></div>
+            <div class="mon-row"><span class="mon-key">RAM</span><span class="mon-val">1.2 GB / 2 GB</span></div>
+            <div class="mon-row"><span class="mon-key">Uptime</span><span style="color:var(--txt2)">14д 6ч</span></div>
+            <div class="mon-row"><span class="mon-key">Disk</span><span style="color:var(--txt2)">8.4 / 40 GB</span></div>
+            <div class="sparkline-section">
+              <div class="sparkline-col"><div class="sparkline-label">CPU</div><div class="sparkline-bars" id="cpu-bars"></div></div>
+              <div class="sparkline-col"><div class="sparkline-label">RAM</div><div class="sparkline-bars" id="ram-bars"></div></div>
+            </div>
+          </div>
+          <div class="mon-card">
+            <div class="mon-card-title"><i class="ti ti-chart-bar" style="font-size:14px;color:var(--acc)"></i>Активность за 7 дней</div>
+            <div class="act-chart" id="act-bars"></div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2)"><span style="width:10px;height:10px;border-radius:2px;background:var(--acc);display:inline-block"></span>Письма 18</div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2)"><span style="width:10px;height:10px;border-radius:2px;background:var(--blue);display:inline-block"></span>Баннеры 31</div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2)"><span style="width:10px;height:10px;border-radius:2px;background:var(--purple);display:inline-block"></span>Статьи 7</div>
+            </div>
+          </div>
+        </div>
+        <div class="sec-label">Уведомления</div>
+        <div class="notif-feed">
+          <div class="notif"><div class="ndot" style="background:var(--red)"></div><span class="notif-time">2 дня назад:</span><span style="color:var(--txt)">Баланс OpenAI опустился ниже $15</span></div>
+          <div class="notif"><div class="ndot" style="background:var(--orange)"></div><span class="notif-time">5 дней назад:</span><span style="color:var(--txt)">Хостинг: 36 дней до оплаты</span></div>
+          <div class="notif"><div class="ndot" style="background:var(--green)"></div><span class="notif-time">7 дней назад:</span><span style="color:var(--txt)">Sendsay сессия обновлена автоматически</span></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
+           TAB: НАСТРОЙКИ
+      ══════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-settings">
+        <div style="max-width:580px">
+          <div class="sett-section">
+            <div class="sett-title"><i class="ti ti-key" style="font-size:14px;color:var(--acc)"></i>API ключи</div>
+            <div class="sett-row"><span class="sett-key">OpenAI</span><div class="sett-input-wrap"><input class="sett-input" type="password" placeholder="sk-proj-…"><span class="sett-eye"><i class="ti ti-eye"></i></span></div></div>
+            <div class="sett-row"><span class="sett-key">Sendsay логин</span><div class="sett-input-wrap"><input class="sett-input" type="text" placeholder="login@example.com"></div></div>
+            <div class="sett-row"><span class="sett-key">Sendsay пароль</span><div class="sett-input-wrap"><input class="sett-input" type="password" placeholder="••••••••"><span class="sett-eye"><i class="ti ti-eye"></i></span></div></div>
+            <div class="sett-row"><span class="sett-key">Telegram Bot Token</span><div class="sett-input-wrap"><input class="sett-input" type="password" placeholder="7xxxxxxxxxx:AA…"><span class="sett-eye"><i class="ti ti-eye"></i></span></div></div>
+          </div>
+          <div class="sett-section">
+            <div class="sett-title"><i class="ti ti-brain" style="font-size:14px;color:var(--purple)"></i>Модели<span class="wip-badge">скоро будет</span></div>
+            <div class="sett-row"><span class="sett-key">Главный ИИ<span class="wip-badge">скоро будет</span></span><select class="sett-select" disabled><option>gpt-4o</option><option>gpt-4-turbo</option><option>claude-sonnet-4-6</option></select></div>
+            <div class="sett-row"><span class="sett-key">Тестировщик<span class="wip-badge">скоро будет</span></span><select class="sett-select" disabled><option>gpt-4o</option><option>gpt-4-turbo</option><option>claude-sonnet-4-6</option></select></div>
+            <div class="sett-row"><span class="sett-key">QA агент<span class="wip-badge">скоро будет</span></span><select class="sett-select" disabled><option>gpt-4o-mini</option><option>gpt-4o</option></select></div>
+          </div>
+          <div class="sett-section">
+            <div class="sett-title"><i class="ti ti-bell" style="font-size:14px;color:var(--orange)"></i>Уведомления<span class="wip-badge">скоро будет</span></div>
+            <div class="sett-row"><span class="sett-key">Порог баланса OpenAI ($)<span class="wip-badge">скоро будет</span></span><input class="sett-number" type="number" value="5" disabled></div>
+            <div class="sett-row"><span class="sett-key">Напомнить о хостинге (дней)<span class="wip-badge">скоро будет</span></span><input class="sett-number" type="number" value="7" disabled></div>
+            <div class="sett-row"><span class="sett-key">Telegram Chat ID<span class="wip-badge">скоро будет</span></span><input class="sett-input" type="text" placeholder="-100xxxxxxxxxx" style="font-family:var(--font-mono)" disabled></div>
+            <div class="sett-row"><span class="sett-key">TG уведомления<span class="wip-badge">скоро будет</span></span><button class="toggle" disabled style="opacity:0.4"></button></div>
+          </div>
+          <div class="sett-section">
+            <div class="sett-title"><i class="ti ti-adjustments" style="font-size:14px;color:var(--blue)"></i>Лимиты генерации</div>
+            <div class="sett-row"><span class="sett-key">Макс. слов в заголовке баннера</span><input class="sett-number" id="sett-banner-title-words" type="number" value="6" min="1" max="10"></div>
+            <div class="sett-row"><span class="sett-key">Макс. слов в подписи баннера</span><input class="sett-number" id="sett-banner-sub-words" type="number" value="10" min="1" max="20"></div>
+            <div class="sett-row"><span class="sett-key">Макс. блоков в письме</span><input class="sett-number" id="sett-letter-blocks" type="number" value="4" min="1" max="6"></div>
+          </div>
+          <button class="btn btn-primary" style="padding:10px 24px" onclick="saveSettings()"><i class="ti ti-device-floppy" style="font-size:13px"></i>Сохранить настройки</button>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+
+    <div class="statusbar">
+      <div class="sb-stat"><span class="dot"></span>Главный ИИ: <span class="v">онлайн</span></div>
+      <div class="sb-stat"><span class="dot"></span>Тестировщик: <span class="v">онлайн</span></div>
+      <div class="sb-stat"><span class="dot"></span>Сервер: <span class="v">OK</span></div>
+      <div class="sb-stat" style="margin-left:auto"><i class="ti ti-coin" style="font-size:13px;color:var(--orange)"></i>OpenAI: <span class="v">$12.40</span></div>
+    </div>
+  </div><!-- /main -->
+</div><!-- /dash -->
+
+<div class="toast" id="toast"></div>
+
+<script src="/tabs/images.js"></script>
+<script src="/tabs/letters.js"></script>
+<script src="/tabs/articles.js"></script>
+<script>
+(function(){
+  // ── Навигация ────────────────────────────────────────────────────
+  function nav(id, el) {
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.querySelectorAll('.sb-item').forEach(function(i){ i.classList.remove('active'); });
+    document.getElementById('tab-' + id).classList.add('active');
+    el.classList.add('active');
+    if (id === 'monitor') buildCharts();
+    if (id === 'banners') { if (typeof renderTemplatePicker === 'function') renderTemplatePicker(); }
+  }
+  window.nav = nav;
+
+  // ── Toast ────────────────────────────────────────────────────────
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 3000);
+  }
+  window.showToast = showToast;
+
+  // ── Empty state observers ────────────────────────────────────────
+  function watchVisibility(resultId, emptyId) {
+    var result = document.getElementById(resultId);
+    var empty  = document.getElementById(emptyId);
+    if (!result || !empty) return;
+    var obs = new MutationObserver(function(){
+      empty.style.display = result.style.display === 'none' ? 'flex' : 'none';
+    });
+    obs.observe(result, { attributes: true, attributeFilter: ['style'] });
+  }
+  watchVisibility('letter-result-card', 'letter-empty-state');
+  watchVisibility('result-card', 'banner-empty-state');
+
+  // ── Articles queue empty state ────────────────────────────────────
+  var origRenderQueue = window.renderQueue;
+  // patch after JS files load — queue empty state
+  setTimeout(function(){
+    var origRQ = window.renderQueue;
+    if (origRQ) {
+      window.renderQueue = function(){
+        origRQ();
+        var empty = document.getElementById('articles-queue-empty');
+        var queue = document.getElementById('articles-queue');
+        if (empty && queue) empty.style.display = queue.innerHTML.trim() ? 'none' : 'flex';
+      };
+    }
+  }, 0);
+
+  // ── Monitor charts ────────────────────────────────────────────────
+  var chartsBuilt = false;
+  function buildCharts() {
+    if (chartsBuilt) return;
+    chartsBuilt = true;
+    var cpuData = [15,18,23,20,25,22,23];
+    var ramData = [55,58,60,59,61,60,60];
+    var cpuEl = document.getElementById('cpu-bars');
+    if (cpuEl) cpuData.forEach(function(v){
+      var b = document.createElement('div');
+      b.style.cssText = 'flex:1;background:#A78BFA;opacity:0.75;border-radius:2px 2px 0 0;height:'+Math.round((v/30)*100)+'%';
+      cpuEl.appendChild(b);
+    });
+    var ramEl = document.getElementById('ram-bars');
+    if (ramEl) ramData.forEach(function(v){
+      var b = document.createElement('div');
+      b.style.cssText = 'flex:1;background:#60A5FA;opacity:0.75;border-radius:2px 2px 0 0;height:'+Math.round((v/65)*100)+'%';
+      ramEl.appendChild(b);
+    });
+    var acts = [{val:18,color:'#C8FF57'},{val:31,color:'#60A5FA'},{val:7,color:'#A78BFA'}];
+    var actEl = document.getElementById('act-bars');
+    if (actEl) acts.forEach(function(a){
+      var grp = document.createElement('div');
+      grp.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;height:100%';
+      var bar = document.createElement('div');
+      bar.style.cssText = 'width:100%;border-radius:3px 3px 0 0;opacity:0.85;background:'+a.color+';height:'+Math.round((a.val/31)*64)+'px';
+      grp.appendChild(bar);
+      actEl.appendChild(grp);
+    });
+  }
+
+  // ── Живые задачи из Telegram (SSE) ───────────────────────────────────────────
+  var taskMap = {};
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function renderTask(task) {
+    var typeName = { banner:'Баннер', letter:'Письмо', article:'Статья', task:'Задача' }[task.tz.type] || 'Задача';
+    var badgeCls = { banner:'badge-banner', letter:'badge-letter', article:'badge-article', task:'badge-unknown' }[task.tz.type] || 'badge-unknown';
+    var priority = task.priority || task.tz.priority || 'normal';
+    var borderColor = { analyzing:'var(--txt3)', pending: priority==='high' ? 'var(--red)' : 'var(--acc)', inprog:'var(--blue)', done:'var(--green)', error:'var(--red)', rejected:'var(--txt3)' }[task.status] || 'var(--bdr2)';
+
+    // Статус — кликабельный селект для ручной смены
+    var statusOptions = [
+      { v:'analyzing', l:'⏳ Ожидает одобрения' },
+      { v:'pending',   l:'🟢 В очереди'         },
+      { v:'inprog',    l:'⚡ В работе'           },
+      { v:'done',      l:'✅ Готово'             },
+      { v:'error',     l:'❌ Ошибка'             },
+    ];
+    var extraStatus = task.status === 'inprog'
+      ? '<i class="ti ti-loader-2 spin" style="font-size:12px;color:var(--blue);margin-left:6px"></i>'
+      : (task.error ? '<span style="font-size:11px;color:var(--red);margin-left:8px">' + esc(task.error) + '</span>' : '');
+    var statusHtml = '<div class="task-status" style="margin-bottom:8px">' +
+      '<select class="status-sel ss-' + task.status + '" onchange="setStatus(\'' + task.id + '\',this.value)">' +
+      statusOptions.map(function(o){ return '<option value="' + o.v + '"' + (task.status===o.v?' selected':'') + '>' + o.l + '</option>'; }).join('') +
+      '</select>' + extraStatus +
+    '</div>';
+
+    // Детали ТЗ (скрыты по умолчанию)
+    var rows = '';
+    // Цель задачи
+    if (task.tz.goal) {
+      rows += '<div class="tz-row" style="grid-column:1/-1"><span class="tz-key">Цель:</span><span class="tz-val" style="font-style:italic">' + esc(task.tz.goal) + '</span></div>';
+    }
+    // Требования
+    if (task.tz.requirements && task.tz.requirements.length) {
+      var reqs = task.tz.requirements.map(function(r){ return '• ' + esc(r); }).join('<br>');
+      rows += '<div class="tz-row" style="grid-column:1/-1"><span class="tz-key">Требования:</span><span class="tz-val">' + reqs + '</span></div>';
+    }
+    // Технические поля
+    if (task.tz.template)  rows += '<div class="tz-row"><span class="tz-key">Шаблон:</span><span class="tz-val"><code>' + esc(task.tz.template) + '</code></span></div>';
+    if (task.tz.subtitle)  rows += '<div class="tz-row"><span class="tz-key">Подзаголовок:</span><span class="tz-val">' + esc(task.tz.subtitle) + '</span></div>';
+    if (task.tz.deadline)  rows += '<div class="tz-row"><span class="tz-key">Дедлайн:</span><span class="tz-val" style="color:var(--orange)">' + esc(task.tz.deadline) + '</span></div>';
+    if (task.fromName)     rows += '<div class="tz-row"><span class="tz-key">От:</span><span class="tz-val">' + esc(task.fromName) + '</span></div>';
+    if (task.sourceChatTitle) rows += '<div class="tz-row"><span class="tz-key">Чат:</span><span class="tz-val">' + esc(task.sourceChatTitle) + '</span></div>';
+    // Исходный текст
+    if (task.tz.text && task.tz.text !== task.tz.title && task.tz.text !== task.tz.goal) {
+      var txt = task.tz.text.slice(0,400) + (task.tz.text.length>400?'…':'');
+      rows += '<div class="tz-row" style="grid-column:1/-1"><span class="tz-key">Исходное сообщение:</span><span class="tz-val" style="white-space:pre-wrap;word-break:break-word;color:var(--txt3)">' + esc(txt) + '</span></div>';
+    }
+    var detailsHtml = rows
+      ? '<div class="tz-preview" id="det-' + task.id + '" style="display:none;margin-bottom:10px">' + rows + '</div>'
+      : '';
+
+    // Кнопки
+    var actionsHtml = '';
+    if (task.status === 'pending') {
+      actionsHtml = '<div class="task-actions">' +
+        '<button class="btn btn-primary" id="exec-' + task.id + '" onclick="execTask(\'' + task.id + '\')"><i class="ti ti-player-play" style="font-size:12px"></i>Взять в работу</button>' +
+        '<button class="btn" disabled style="opacity:0.35;cursor:not-allowed"><i class="ti ti-robot" style="font-size:12px"></i>Отдать боту</button>' +
+        '<button class="btn" onclick="toggleDet(\'' + task.id + '\')"><i class="ti ti-chevron-down" style="font-size:12px"></i>Подробнее</button>' +
+        '<button class="btn btn-danger" onclick="rejectTask(\'' + task.id + '\')"><i class="ti ti-trash" style="font-size:12px"></i>Удалить</button>' +
+      '</div>';
+    } else if (task.status === 'analyzing' || task.status === 'error') {
+      actionsHtml = '<div class="task-actions">' +
+        (rows ? '<button class="btn" onclick="toggleDet(\'' + task.id + '\')"><i class="ti ti-chevron-down" style="font-size:12px"></i>Подробнее</button>' : '') +
+        '<button class="btn btn-danger" onclick="rejectTask(\'' + task.id + '\')"><i class="ti ti-trash" style="font-size:12px"></i>Удалить</button>' +
+      '</div>';
+    } else if (task.status === 'done') {
+      actionsHtml = '<div class="task-actions">' +
+        (rows ? '<button class="btn" onclick="toggleDet(\'' + task.id + '\')"><i class="ti ti-chevron-down" style="font-size:12px"></i>Детали</button>' : '') +
+        '<button class="btn btn-danger" onclick="rejectTask(\'' + task.id + '\')"><i class="ti ti-trash" style="font-size:12px"></i>Удалить</button>' +
+      '</div>';
+    }
+
+    var time   = new Date(task.createdAt).toLocaleTimeString('ru', { hour:'2-digit', minute:'2-digit' });
+    var source = task.sourceChatTitle ? '👥 ' + esc(task.sourceChatTitle) : esc(task.fromName||'');
+
+    // Строка мета: дедлайн + приоритет (только для активных задач)
+    var metaHtml = '';
+    var isActive = task.status === 'pending' || task.status === 'analyzing';
+    if (isActive) {
+      // Дедлайн
+      var dlRaw = task.deadline || task.tz.deadline || '';
+      var dlValue = (dlRaw && dlRaw.match(/\d{4}-\d{2}-\d{2}/)) ? dlRaw.slice(0,10) : '';
+      var dlBadge = '';
+      if (dlValue) {
+        var dlDate = new Date(dlValue); var now = new Date(); now.setHours(0,0,0,0);
+        var diff = Math.round((dlDate - now) / 86400000);
+        if (diff < 0)      dlBadge = '<span class="dl-badge dl-overdue"><i class="ti ti-alert-triangle" style="font-size:10px"></i> Просрочено</span>';
+        else if (diff===0) dlBadge = '<span class="dl-badge dl-today">Сегодня</span>';
+        else if (diff<=2)  dlBadge = '<span class="dl-badge dl-soon">через ' + diff + ' дн.</span>';
+        else               dlBadge = '<span class="dl-badge dl-ok">через ' + diff + ' дн.</span>';
+      }
+      var dlHtml = '<div class="task-deadline">' +
+        '<i class="ti ti-calendar-event" style="font-size:12px;color:var(--txt3)"></i>' +
+        '<input type="date" class="task-date-inp" value="' + dlValue + '" title="Дедлайн" onchange="setDeadline(\'' + task.id + '\',this.value)">' +
+        dlBadge +
+      '</div>';
+      // Приоритет
+      var prioHtml = '<select class="task-prio-sel prio-' + priority + '" title="Приоритет" onchange="setPriority(\'' + task.id + '\',this.value)">' +
+        '<option value="normal"' + (priority==='normal'?' selected':'') + '>⚡ Обычный</option>' +
+        '<option value="high"'   + (priority==='high'  ?' selected':'') + '>🔴 Срочно</option>' +
+        '<option value="low"'    + (priority==='low'   ?' selected':'') + '>🔵 Не срочно</option>' +
+      '</select>';
+      metaHtml = '<div class="task-meta">' + dlHtml + '<div style="margin-left:auto">' + prioHtml + '</div></div>';
+    }
+
+    return '<div class="task-card" id="task-' + task.id + '" draggable="true" style="border-left-color:' + borderColor + '">' +
+      '<div class="task-top">' +
+        '<i class="ti ti-grip-vertical" style="color:var(--txt3);font-size:14px"></i>' +
+        '<span class="task-badge ' + badgeCls + '">' + typeName + '</span>' +
+        '<span class="task-source" style="margin-left:auto">' + source + '&nbsp;&nbsp;' + time + '</span>' +
+      '</div>' +
+      '<div class="task-title">' + esc(task.tz.title||'Задача') + '</div>' +
+      metaHtml + detailsHtml + statusHtml + actionsHtml +
+    '</div>';
+  }
+
+  window.toggleDet = function(id) {
+    var el = document.getElementById('det-' + id);
+    if (!el) return;
+    var open = el.style.display !== 'none';
+    el.style.display = open ? 'none' : 'grid';
+    // Меняем иконку кнопки
+    var card = document.getElementById('task-' + id);
+    if (card) {
+      var icon = card.querySelector('.ti-chevron-down, .ti-chevron-up');
+      if (icon) { icon.classList.toggle('ti-chevron-down', open); icon.classList.toggle('ti-chevron-up', !open); }
+    }
+  };
+
+  window.execTask = function(id) {
+    var btn = document.getElementById('exec-' + id);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner" style="width:12px;height:12px;margin-right:6px"></span>Запускаю...'; }
+    fetch('/api/tasks/' + id + '/execute', { method: 'POST' })
+      .then(function(r){
+        if (!r.ok) return r.json().then(function(d){ showToast('Ошибка: ' + (d.error||'Неизвестная ошибка')); if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-player-play" style="font-size:12px"></i>Взять в работу';} });
+      })
+      .catch(function(){ showToast('Ошибка соединения'); if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-player-play" style="font-size:12px"></i>Взять в работу';} });
+  };
+
+  window.rejectTask = function(id) {
+    fetch('/api/tasks/' + id, { method: 'DELETE' })
+      .then(function(){ delete taskMap[id]; refreshTaskList(); refreshTgFeed(); })
+      .catch(function(){});
+  };
+
+  // ── Приоритет и дедлайн ───────────────────────────────────────────────────────
+  function patchTask(id, updates) {
+    if (taskMap[id]) Object.assign(taskMap[id], updates);
+    return fetch('/api/tasks/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    }).catch(function(){});
+  }
+
+  window.setStatus = function(id, val) {
+    // Моментально обновляем стиль селекта
+    var sel = document.querySelector('#task-' + id + ' .status-sel');
+    if (sel) { sel.className = 'status-sel ss-' + val; }
+    patchTask(id, { status: val });
+  };
+
+  window.setPriority = function(id, val) {
+    // Моментально обновляем стиль селекта без перерисовки карточки
+    var sel = document.querySelector('#task-' + id + ' .task-prio-sel');
+    if (sel) { sel.className = 'task-prio-sel prio-' + val; }
+    // Обновляем левую полоску карточки
+    var card = document.getElementById('task-' + id);
+    if (card && taskMap[id] && taskMap[id].status === 'pending') {
+      card.style.borderLeftColor = val === 'high' ? 'var(--red)' : 'var(--acc)';
+    }
+    patchTask(id, { priority: val });
+  };
+
+  var reminderTimers = {};
+  window.setDeadline = function(id, val) {
+    patchTask(id, { deadline: val || null });
+    // Планируем напоминание в браузере
+    if (reminderTimers[id]) clearTimeout(reminderTimers[id]);
+    if (!val) return;
+    var dl = new Date(val);
+    dl.setHours(9, 0, 0, 0); // уведомление в 9:00 утра в день дедлайна
+    var diff = dl - Date.now();
+    if (diff > 0 && diff < 7 * 24 * 3600000) { // не дальше 7 дней
+      Notification.requestPermission().then(function(perm) {
+        if (perm !== 'granted') return;
+        reminderTimers[id] = setTimeout(function() {
+          var t = taskMap[id];
+          new Notification('⏰ Дедлайн сегодня', {
+            body: t ? t.tz.title : 'Задача #' + id,
+            icon: '/icons/icon-192.png',
+          });
+        }, diff);
+      });
+    }
+  };
+
+  // Каждую минуту перерисовываем карточки с просроченными дедлайнами
+  setInterval(function() {
+    var needRefresh = Object.values(taskMap).some(function(t) {
+      return t.deadline && new Date(t.deadline) < new Date();
+    });
+    if (needRefresh) refreshTaskList();
+  }, 60000);
+
+  // ── Telegram-вкладка: фид входящих ──────────────────────────────────────────
+  var tgActiveFilter = 'all';
+
+  window.tgFilter = function(f) {
+    tgActiveFilter = f;
+    ['all','pending','done'].forEach(function(k){
+      var btn = document.getElementById('tgf-' + k);
+      if (btn) { btn.style.background = k===f ? 'var(--acc-dim)' : ''; btn.style.color = k===f ? 'var(--acc)' : ''; }
+    });
+    refreshTgFeed();
+  };
+
+  function renderTgCard(task) {
+    var typeName = { banner:'Баннер', letter:'Письмо', article:'Статья', task:'Задача' }[task.tz.type] || 'Задача';
+    var badgeCls = { banner:'badge-banner', letter:'badge-letter', article:'badge-article', task:'badge-unknown' }[task.tz.type] || 'badge-unknown';
+    var statusBadge = {
+      analyzing: '<span style="font-size:10px;color:var(--txt3);background:rgba(255,255,255,0.05);padding:2px 7px;border-radius:20px">⏳ Ожидает</span>',
+      pending:   '<span style="font-size:10px;color:var(--acc);background:var(--acc-dim);padding:2px 7px;border-radius:20px">🟢 В очереди</span>',
+      inprog:    '<span style="font-size:10px;color:var(--blue);background:rgba(96,165,250,0.1);padding:2px 7px;border-radius:20px">⚡ Выполняется</span>',
+      done:      '<span style="font-size:10px;color:var(--green);background:rgba(74,222,128,0.1);padding:2px 7px;border-radius:20px">✅ Готово</span>',
+      error:     '<span style="font-size:10px;color:var(--red);background:rgba(255,90,90,0.1);padding:2px 7px;border-radius:20px">❌ Ошибка</span>',
+    }[task.status] || '';
+    var time = new Date(task.createdAt).toLocaleTimeString('ru', { hour:'2-digit', minute:'2-digit' });
+    var date = new Date(task.createdAt).toLocaleDateString('ru', { day:'numeric', month:'short' });
+    var from = task.sourceChatTitle
+      ? '<i class="ti ti-users" style="font-size:11px;color:var(--blue)"></i> ' + esc(task.sourceChatTitle) + ' · ' + esc(task.fromName||'')
+      : '<i class="ti ti-user" style="font-size:11px;color:var(--txt3)"></i> ' + esc(task.fromName||'Неизвестно');
+
+    // Секция ТЗ
+    var tzHtml = '';
+    if (task.tz.goal) tzHtml += '<div style="margin-top:8px;font-size:12px;color:var(--txt2)"><b style="color:var(--txt);font-weight:500">Цель:</b> ' + esc(task.tz.goal) + '</div>';
+    if (task.tz.requirements && task.tz.requirements.length) {
+      tzHtml += '<div style="margin-top:6px;font-size:11.5px;color:var(--txt3)">' +
+        task.tz.requirements.map(function(r){ return '• ' + esc(r); }).join(' &nbsp;') + '</div>';
+    }
+    if (task.tz.deadline) tzHtml += '<div style="margin-top:4px;font-size:11px;color:var(--orange)">⏰ ' + esc(task.tz.deadline) + '</div>';
+
+    // Исходное сообщение
+    var origText = task.tz.text || '';
+    var origHtml = origText
+      ? '<div style="margin-top:8px;padding:8px 10px;background:var(--bg3);border-radius:var(--r8);border-left:2px solid var(--bdr2);font-size:11.5px;color:var(--txt3);white-space:pre-wrap;word-break:break-word">' +
+          esc(origText.slice(0,300)) + (origText.length>300?'…':'') + '</div>'
+      : '';
+
+    // Кнопки действий
+    var btns = '';
+    if (task.status === 'pending') {
+      btns = '<button class="btn btn-primary" onclick="execTask(\'' + task.id + '\');refreshTgFeed()" style="font-size:11px;padding:4px 10px"><i class="ti ti-player-play" style="font-size:11px"></i>Сделать</button>';
+    }
+
+    return '<div style="background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:var(--r12);padding:14px 16px;">' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+        '<span class="task-badge ' + badgeCls + '">' + typeName + '</span>' +
+        statusBadge +
+        '<span style="font-size:11px;color:var(--txt3);margin-left:auto">' + from + ' · ' + date + ' ' + time + '</span>' +
+      '</div>' +
+      '<div style="margin-top:8px;font-size:13.5px;font-weight:500;color:var(--txt)">' + esc(task.tz.title||'Задача') + '</div>' +
+      tzHtml + origHtml +
+      (btns ? '<div style="margin-top:10px;display:flex;gap:7px">' + btns + '</div>' : '') +
+    '</div>';
+  }
+
+  function refreshTgFeed() {
+    var feed  = document.getElementById('tg-feed');
+    var empty = document.getElementById('tg-empty');
+    var count = document.getElementById('tg-count');
+    if (!feed) return;
+
+    var tasks = Object.values(taskMap).sort(function(a,b){ return b.createdAt - a.createdAt; });
+    var filtered = tasks.filter(function(t) {
+      if (tgActiveFilter === 'pending') return t.status === 'pending' || t.status === 'analyzing';
+      if (tgActiveFilter === 'done')    return t.status === 'done' || t.status === 'error';
+      return true;
+    });
+
+    if (count) count.textContent = tasks.length ? tasks.length + ' сообщ.' : 'Нет сообщений';
+
+    if (filtered.length === 0) {
+      feed.innerHTML = '';
+      if (empty) empty.style.display = '';
+    } else {
+      if (empty) empty.style.display = 'none';
+      feed.innerHTML = filtered.map(renderTgCard).join('');
+    }
+  }
+
+  window.refreshTgFeed = refreshTgFeed;
+
+  function updateCounters() {
+    var tasks = Object.values(taskMap);
+    document.getElementById('cnt-new').textContent    = tasks.filter(function(t){ return t.status==='pending'; }).length;
+    document.getElementById('cnt-inprog').textContent = tasks.filter(function(t){ return t.status==='inprog'; }).length;
+    document.getElementById('cnt-done').textContent   = tasks.filter(function(t){ return t.status==='done'; }).length;
+  }
+
+  function refreshTaskList() {
+    var list  = document.getElementById('task-list');
+    var empty = document.getElementById('tasks-empty');
+    var tasks = Object.values(taskMap).sort(function(a,b){ return a.createdAt - b.createdAt; });
+    if (tasks.length === 0) {
+      list.innerHTML = ''; list.appendChild(empty); empty.style.display = '';
+    } else {
+      empty.style.display = 'none';
+      list.innerHTML = tasks.map(renderTask).join('');
+    }
+    updateCounters();
+  }
+
+  var evtSource = new EventSource('/api/tasks/events');
+  evtSource.onmessage = function(e) {
+    var data = JSON.parse(e.data);
+    if (data.type === 'init') {
+      taskMap = {};
+      data.tasks.forEach(function(t){ taskMap[t.id] = t; });
+    } else if (data.type === 'add' || data.type === 'update') {
+      taskMap[data.task.id] = data.task;
+    } else if (data.type === 'remove') {
+      delete taskMap[data.id];
+    }
+    refreshTaskList();
+    refreshTgFeed();
+  };
+
+  // ── Drag-and-drop task cards ──────────────────────────────────────
+  var list = document.getElementById('task-list');
+  var dragged = null;
+  if (list) {
+    list.addEventListener('dragstart', function(e){
+      dragged = e.target.closest('.task-card');
+      if (dragged) { setTimeout(function(){ dragged.classList.add('dragging'); }, 0); }
+    });
+    list.addEventListener('dragend', function(){
+      if (dragged) dragged.classList.remove('dragging');
+      dragged = null;
+      document.querySelectorAll('.drop-indicator').forEach(function(d){ d.remove(); });
+    });
+    list.addEventListener('dragover', function(e){
+      e.preventDefault();
+      document.querySelectorAll('.drop-indicator').forEach(function(d){ d.remove(); });
+      var target = e.target.closest('.task-card');
+      if (target && target !== dragged) {
+        var indicator = document.createElement('div');
+        indicator.className = 'drop-indicator';
+        target.parentNode.insertBefore(indicator, target);
+      }
+    });
+    list.addEventListener('drop', function(e){
+      e.preventDefault();
+      var target = e.target.closest('.task-card');
+      if (target && target !== dragged && dragged) {
+        list.insertBefore(dragged, target);
+      }
+      document.querySelectorAll('.drop-indicator').forEach(function(d){ d.remove(); });
+      // Renumber tasks
+      list.querySelectorAll('.task-num').forEach(function(n, i){ n.textContent = '#' + (i+1); });
+    });
+  }
+
+  // ── Настройки: сохранение/загрузка лимитов ───────────────────────
+  var LIMITS_KEY = 'dp_limits';
+  function loadLimits() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(LIMITS_KEY) || '{}');
+      if (saved.bannerTitle) document.getElementById('sett-banner-title-words').value = saved.bannerTitle;
+      if (saved.bannerSub)   document.getElementById('sett-banner-sub-words').value   = saved.bannerSub;
+      if (saved.letterBlocks) document.getElementById('sett-letter-blocks').value     = saved.letterBlocks;
+    } catch(e) {}
+  }
+  function saveLimits() {
+    localStorage.setItem(LIMITS_KEY, JSON.stringify({
+      bannerTitle:   document.getElementById('sett-banner-title-words').value,
+      bannerSub:     document.getElementById('sett-banner-sub-words').value,
+      letterBlocks:  document.getElementById('sett-letter-blocks').value,
+    }));
+    showToast('Настройки сохранены');
+  }
+  window.getLimits = function() {
+    try { return JSON.parse(localStorage.getItem(LIMITS_KEY) || '{}'); } catch(e) { return {}; }
+  };
+  window.saveSettings = saveLimits;
+  loadLimits();
+
+  // ── PWA Service Worker ────────────────────────────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+  }
+})();
+</script>
+</body>
+</html>

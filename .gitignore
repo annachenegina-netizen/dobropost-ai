@@ -1,0 +1,21 @@
+node_modules/
+.env
+.claude/
+.env.local
+.env.production
+
+.crm-session/
+.sendsay-session/
+.tmp-uploads/
+*.err
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+*.tmp

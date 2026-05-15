@@ -1,0 +1,26 @@
+{
+  "name": "dobropost-workflow",
+  "version": "1.0.0",
+  "description": "Система автоматизации DobroPost",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0",
+    "express": "^4.19.0",
+    "mammoth": "^1.8.0",
+    "multer": "^2.1.1",
+    "node-telegram-bot-api": "^0.66.0",
+    "nodemailer": "^6.9.0",
+    "openai": "^6.37.0",
+    "puppeteer": "^24.43.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0",
+    "pngjs": "^7.0.0"
+  }
+}
