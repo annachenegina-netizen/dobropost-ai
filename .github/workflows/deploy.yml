@@ -15,6 +15,7 @@ jobs:
           username: root
           key: ${{ secrets.SSH_DEPLOY_KEY }}
           script: |
+            apt-get install -y build-essential > /dev/null 2>&1 || true
             cd /opt/dobropost
             git fetch origin
             git reset --hard origin/main
