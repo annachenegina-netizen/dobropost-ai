@@ -284,13 +284,36 @@ html,body{height:100%;overflow:hidden}
 .log-line.done{color:var(--green)}
 .log-line.active-log{color:var(--orange)}
 .log-line.wait{color:var(--txt3)}
+
+/* ── Mobile ──────────────────────────────────────────────────────── */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99;opacity:0;pointer-events:none;transition:opacity .25s}
+.sb-overlay.show{opacity:1;pointer-events:all}
+.tb-hamburger{display:none;background:none;border:none;color:var(--txt2);cursor:pointer;padding:4px;line-height:0;flex-shrink:0}
+
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-224px;top:0;height:100%;z-index:100;transition:left .25s cubic-bezier(.4,0,.2,1);box-shadow:none}
+  .sidebar.open{left:0;box-shadow:4px 0 32px rgba(0,0,0,0.5)}
+  .sb-overlay{display:block}
+  .tb-hamburger{display:flex}
+  .tb-pills{display:none}
+  .topbar{padding:0 14px}
+  .content{padding:14px}
+  .two-col{grid-template-columns:1fr}
+  .mon-grid{grid-template-columns:1fr}
+  .mon-card[style*="grid-column"]{grid-column:auto!important}
+  .hist-filter{flex-wrap:wrap;gap:6px}
+  .hist-input{min-width:0}
+  .statusbar{padding:0 14px;gap:12px;overflow-x:auto}
+  .task-card-grid{grid-template-columns:1fr!important}
+}
 </style>
 </head>
 <body>
+<div id="sb-overlay" class="sb-overlay" onclick="closeSidebar()"></div>
 <div class="dash">
 
   <!-- SIDEBAR -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="sb-logo">
       <div class="sb-logo-mark">DobroPost AI</div>
       <div class="sb-logo-sub">Automation Hub v3.0</div>
@@ -320,11 +343,14 @@ html,body{height:100%;overflow:hidden}
   <!-- MAIN -->
   <div class="main">
     <div class="topbar">
+      <button class="tb-hamburger" onclick="toggleSidebar()"><i class="ti ti-menu-2" style="font-size:20px"></i></button>
       <div class="tb-logo">DobroPost AI</div>
-      <div class="tb-pill"><span class="tb-dot"></span>Сервер</div>
-      <div class="tb-pill"><span class="tb-dot"></span>OpenAI</div>
-      <div class="tb-pill"><span class="tb-dot"></span>Sendsay</div>
-      <div class="tb-pill"><span class="tb-dot warn"></span>TG Bot</div>
+      <div class="tb-pills" style="display:flex;gap:6px">
+        <div class="tb-pill"><span class="tb-dot"></span>Сервер</div>
+        <div class="tb-pill"><span class="tb-dot"></span>OpenAI</div>
+        <div class="tb-pill"><span class="tb-dot"></span>Sendsay</div>
+        <div class="tb-pill"><span class="tb-dot warn"></span>TG Bot</div>
+      </div>
       <div class="tb-bell" style="margin-left:8px"><i class="ti ti-bell" style="font-size:18px"></i><div class="tb-badge">2</div></div>
       <div class="tb-avatar">ВЛ</div>
     </div>
@@ -710,7 +736,25 @@ html,body{height:100%;overflow:hidden}
     if (id === 'monitor') loadMonitor();
     if (id === 'banners') { if (typeof renderTemplatePicker === 'function') renderTemplatePicker(); }
     if (id === 'history') loadHistory();
+    if (window.innerWidth <= 768) closeSidebar();
   }
+
+  // ── Sidebar mobile toggle ────────────────────────────────────────
+  function toggleSidebar() {
+    var sb = document.getElementById('sidebar');
+    var ov = document.getElementById('sb-overlay');
+    var isOpen = sb.classList.contains('open');
+    if (isOpen) { closeSidebar(); } else {
+      sb.classList.add('open');
+      ov.classList.add('show');
+    }
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sb-overlay').classList.remove('show');
+  }
+  window.toggleSidebar = toggleSidebar;
+  window.closeSidebar = closeSidebar;
   window.nav = nav;
 
   // ── Toast ────────────────────────────────────────────────────────
