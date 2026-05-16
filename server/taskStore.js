@@ -73,6 +73,8 @@ function addTask({ tz, fromName, sourceChatTitle, telegramChatId, telegramMsgId 
   );
 
   broadcast({ type: 'add', task });
+  const typeLabel = { banner: 'Баннер', letter: 'Письмо', article: 'Статья', task: 'Задача' }[task.tz?.type] || 'Задача';
+  sendPush('📥 Новая задача: ' + typeLabel, task.tz?.title || task.fromName || 'Без названия', '/');
   return task;
 }
 
