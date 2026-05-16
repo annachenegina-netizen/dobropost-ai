@@ -352,10 +352,10 @@ html,body{height:100%;overflow:hidden}
       <div class="tb-desktop">
         <div id="tb-commit" style="font-family:var(--font-mono);font-size:10px;color:var(--txt3);background:var(--bg3);border:0.5px solid var(--bdr);border-radius:6px;padding:3px 8px;cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px" title="">…</div>
         <div class="tb-pills">
-          <div class="tb-pill"><span class="tb-dot"></span>Сервер</div>
-          <div class="tb-pill"><span class="tb-dot"></span>OpenAI</div>
-          <div class="tb-pill"><span class="tb-dot"></span>Sendsay</div>
-          <div class="tb-pill"><span class="tb-dot warn"></span>TG Bot</div>
+          <div class="tb-pill"><span class="tb-dot" id="pill-server" style="background:var(--green)"></span>Сервер</div>
+          <div class="tb-pill"><span class="tb-dot" id="pill-openai" style="background:var(--txt3)"></span>OpenAI</div>
+          <div class="tb-pill"><span class="tb-dot" id="pill-sendsay" style="background:var(--txt3)"></span>Sendsay</div>
+          <div class="tb-pill"><span class="tb-dot" id="pill-tg" style="background:var(--txt3)"></span>TG Bot</div>
         </div>
       </div>
       <div class="tb-bell" style="margin-left:auto"><i class="ti ti-bell" style="font-size:18px"></i><div class="tb-badge">2</div></div>
@@ -1049,6 +1049,17 @@ html,body{height:100%;overflow:hidden}
     if (!el) return;
     el.textContent = d.hash + ' · ' + d.msg;
     el.title = d.date;
+  }).catch(function(){});
+
+  // ── Статус сервисов (пилюли в топбаре) ───────────────────────────
+  function dotColor(id, color) {
+    var el = document.getElementById(id);
+    if (el) el.style.background = color;
+  }
+  fetch('/api/status').then(function(r){ return r.json(); }).then(function(d) {
+    dotColor('pill-openai',  d.openai   ? 'var(--green)'  : 'var(--red)');
+    dotColor('pill-sendsay', d.sendsay  ? 'var(--green)'  : 'var(--red)');
+    dotColor('pill-tg',      d.telegram ? 'var(--green)'  : 'var(--orange)');
   }).catch(function(){});
 
   // ── Живые задачи из Telegram (SSE) ───────────────────────────────────────────

@@ -27,15 +27,26 @@ app.use('/api/push',     require('./routes/push'));
 app.use('/api/settings', require('./routes/settings'));
 
 // Версия — последний git коммит
+const REPO = path.join(__dirname, '..');
 app.get('/api/version', (req, res) => {
   try {
-    const hash = execSync('git rev-parse --short HEAD').toString().trim();
-    const msg  = execSync('git log -1 --format=%s').toString().trim();
-    const date = execSync('git log -1 --format=%ci').toString().trim().slice(0, 16);
+    const hash = execSync(`git -C "${REPO}" rev-parse --short HEAD`).toString().trim();
+    const msg  = execSync(`git -C "${REPO}" log -1 --format=%s`).toString().trim();
+    const date = execSync(`git -C "${REPO}" log -1 --format=%ci`).toString().trim().slice(0, 16);
     res.json({ hash, msg, date });
   } catch (_) {
     res.json({ hash: '—', msg: 'git недоступен', date: '' });
   }
+});
+
+// Быстрый статус сервисов (без внешних запросов, только проверка ключей)
+app.get('/api/status', (req, res) => {
+  res.json({
+    server:   true,
+    openai:   !!process.env.OPENAI_API_KEY,
+    sendsay:  !!process.env.SENDSAY_LOGIN,
+    telegram: !!process.env.TELEGRAM_BOT_TOKEN,
+  });
 });
 
 // Главная страница — дашборд
