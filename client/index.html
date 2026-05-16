@@ -586,28 +586,20 @@ html,body{height:100%;overflow:hidden}
            TAB: ИСТОРИЯ
       ══════════════════════════════════════════════ -->
       <div class="tab-panel" id="tab-history">
-        <div class="wip-banner"><i class="ti ti-tool" style="font-size:14px;flex-shrink:0"></i>История пока статична — реальное логирование задач будет добавлено позже.</div>
         <div class="hist-filter">
-          <button class="btn" style="background:var(--acc-dim);color:var(--acc);border-color:rgba(200,255,87,0.3)">Все</button>
-          <button class="btn">Письма</button>
-          <button class="btn">Баннеры</button>
-          <button class="btn">Статьи</button>
-          <input class="hist-input" placeholder="Поиск…">
-          <input type="date" class="hist-input" style="max-width:140px" value="2026-01-01">
-          <input type="date" class="hist-input" style="max-width:140px" value="2026-05-15">
+          <button class="btn hist-type-btn active" data-type="" onclick="histSetType(this,'')">Все</button>
+          <button class="btn hist-type-btn" data-type="letter" onclick="histSetType(this,'letter')">Письма</button>
+          <button class="btn hist-type-btn" data-type="banner" onclick="histSetType(this,'banner')">Баннеры</button>
+          <button class="btn hist-type-btn" data-type="article" onclick="histSetType(this,'article')">Статьи</button>
+          <input class="hist-input" id="hist-search" placeholder="Поиск…" oninput="loadHistory()">
+          <input type="date" class="hist-input" id="hist-from" style="max-width:140px" oninput="loadHistory()">
+          <input type="date" class="hist-input" id="hist-to" style="max-width:140px" oninput="loadHistory()">
         </div>
         <div class="card" style="padding:0;overflow:hidden">
           <table class="hist-table">
             <colgroup><col style="width:40px"><col style="width:76px"><col><col style="width:96px"><col style="width:88px"><col style="width:80px"></colgroup>
-            <thead><tr>
-              <th></th><th>Тип</th><th>Название</th><th>Дата</th><th>Статус</th><th>Действия</th>
-            </tr></thead>
-            <tbody>
-              <tr><td><div class="hist-icon" style="background:var(--acc-dim)"><i class="ti ti-mail" style="font-size:14px;color:var(--acc)"></i></div></td><td><span class="task-badge badge-letter">Письмо</span></td><td>Рассылка про новинки — ноябрь</td><td style="color:var(--txt2)">14 мая 2026</td><td><span class="status-sent">Отправлено</span></td><td><div style="display:flex;gap:4px"><button class="btn" style="padding:4px 7px"><i class="ti ti-eye" style="font-size:11px"></i></button><button class="btn" style="padding:4px 7px"><i class="ti ti-refresh" style="font-size:11px"></i></button><button class="btn btn-danger" style="padding:4px 7px"><i class="ti ti-trash" style="font-size:11px"></i></button></div></td></tr>
-              <tr><td><div class="hist-icon" style="background:rgba(96,165,250,0.1)"><i class="ti ti-photo" style="font-size:14px;color:var(--blue)"></i></div></td><td><span class="task-badge badge-banner">Баннер</span></td><td>Акция на кроссовки −30%</td><td style="color:var(--txt2)">13 мая 2026</td><td><span class="status-draft">Черновик</span></td><td><div style="display:flex;gap:4px"><button class="btn" style="padding:4px 7px"><i class="ti ti-eye" style="font-size:11px"></i></button><button class="btn" style="padding:4px 7px"><i class="ti ti-refresh" style="font-size:11px"></i></button><button class="btn btn-danger" style="padding:4px 7px"><i class="ti ti-trash" style="font-size:11px"></i></button></div></td></tr>
-              <tr><td><div class="hist-icon" style="background:rgba(167,139,250,0.12)"><i class="ti ti-file-text" style="font-size:14px;color:var(--purple)"></i></div></td><td><span class="task-badge badge-article">Статья</span></td><td>Гайд: посылка из Китая</td><td style="color:var(--txt2)">10 мая 2026</td><td><span class="status-sent">Отправлено</span></td><td><div style="display:flex;gap:4px"><button class="btn" style="padding:4px 7px"><i class="ti ti-eye" style="font-size:11px"></i></button><button class="btn" style="padding:4px 7px"><i class="ti ti-refresh" style="font-size:11px"></i></button><button class="btn btn-danger" style="padding:4px 7px"><i class="ti ti-trash" style="font-size:11px"></i></button></div></td></tr>
-              <tr><td><div class="hist-icon" style="background:var(--acc-dim)"><i class="ti ti-mail" style="font-size:14px;color:var(--acc)"></i></div></td><td><span class="task-badge badge-letter">Письмо</span></td><td>Майские акции — подборка</td><td style="color:var(--txt2)">8 мая 2026</td><td><span class="status-archive">Архив</span></td><td><div style="display:flex;gap:4px"><button class="btn" style="padding:4px 7px"><i class="ti ti-eye" style="font-size:11px"></i></button><button class="btn" style="padding:4px 7px"><i class="ti ti-refresh" style="font-size:11px"></i></button><button class="btn btn-danger" style="padding:4px 7px"><i class="ti ti-trash" style="font-size:11px"></i></button></div></td></tr>
-            </tbody>
+            <thead><tr><th></th><th>Тип</th><th>Название</th><th>Дата</th><th>Статус</th><th></th></tr></thead>
+            <tbody id="hist-tbody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--txt3)">Загрузка…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -734,6 +726,7 @@ html,body{height:100%;overflow:hidden}
     el.classList.add('active');
     if (id === 'monitor') buildCharts();
     if (id === 'banners') { if (typeof renderTemplatePicker === 'function') renderTemplatePicker(); }
+    if (id === 'history') loadHistory();
   }
   window.nav = nav;
 
@@ -1199,6 +1192,87 @@ html,body{height:100%;overflow:hidden}
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   }
+
+  // ── История задач ─────────────────────────────────────────────────
+  var histType = '';
+
+  window.histSetType = function(el, type) {
+    histType = type;
+    document.querySelectorAll('.hist-type-btn').forEach(function(b) {
+      b.classList.toggle('active', b === el);
+      b.style.background = b === el ? 'var(--acc-dim)' : '';
+      b.style.color = b === el ? 'var(--acc)' : '';
+      b.style.borderColor = b === el ? 'rgba(200,255,87,0.3)' : '';
+    });
+    loadHistory();
+  };
+
+  window.loadHistory = function() {
+    var params = new URLSearchParams();
+    if (histType) params.set('type', histType);
+    var search = document.getElementById('hist-search');
+    var from = document.getElementById('hist-from');
+    var to = document.getElementById('hist-to');
+    if (search && search.value) params.set('search', search.value);
+    if (from && from.value) params.set('dateFrom', from.value);
+    if (to && to.value) params.set('dateTo', to.value);
+
+    fetch('/api/tasks/history?' + params.toString())
+      .then(function(r) { return r.json(); })
+      .then(function(tasks) {
+        var tbody = document.getElementById('hist-tbody');
+        if (!tbody) return;
+        if (!tasks.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--txt3)">Нет завершённых задач</td></tr>';
+          return;
+        }
+        tbody.innerHTML = tasks.map(function(t) {
+          var tz = t.tz || {};
+          var type = tz.type || 'task';
+          var title = tz.title || 'Без названия';
+          var date = new Date(t.createdAt).toLocaleDateString('ru-RU', { day:'numeric', month:'short', year:'numeric' });
+
+          var iconHtml = type === 'letter'
+            ? '<div class="hist-icon" style="background:var(--acc-dim)"><i class="ti ti-mail" style="font-size:14px;color:var(--acc)"></i></div>'
+            : type === 'banner'
+            ? '<div class="hist-icon" style="background:rgba(96,165,250,0.1)"><i class="ti ti-photo" style="font-size:14px;color:var(--blue)"></i></div>'
+            : type === 'article'
+            ? '<div class="hist-icon" style="background:rgba(167,139,250,0.12)"><i class="ti ti-file-text" style="font-size:14px;color:var(--purple)"></i></div>'
+            : '<div class="hist-icon" style="background:var(--bg4)"><i class="ti ti-checkbox" style="font-size:14px;color:var(--txt2)"></i></div>';
+
+          var typeLabel = type === 'letter' ? '<span class="task-badge badge-letter">Письмо</span>'
+            : type === 'banner' ? '<span class="task-badge badge-banner">Баннер</span>'
+            : type === 'article' ? '<span class="task-badge badge-article">Статья</span>'
+            : '<span class="task-badge badge-unknown">Задача</span>';
+
+          var statusHtml = t.status === 'done'
+            ? '<span style="color:var(--green);font-size:12px;font-weight:500">Готово</span>'
+            : t.status === 'error'
+            ? '<span style="color:var(--red);font-size:12px;font-weight:500">Ошибка</span>'
+            : '<span style="color:var(--txt3);font-size:12px">Отклонено</span>';
+
+          return '<tr>'
+            + '<td>' + iconHtml + '</td>'
+            + '<td>' + typeLabel + '</td>'
+            + '<td style="color:var(--txt)">' + title + (t.fromName && t.fromName !== '?' ? ' <span style="color:var(--txt3);font-size:11px">· ' + t.fromName + '</span>' : '') + '</td>'
+            + '<td style="color:var(--txt2);font-size:12px">' + date + '</td>'
+            + '<td>' + statusHtml + '</td>'
+            + '<td><button class="btn btn-danger" style="padding:4px 7px" onclick="histDelete(\'' + t.id + '\',this)" title="Удалить"><i class="ti ti-trash" style="font-size:11px"></i></button></td>'
+            + '</tr>';
+        }).join('');
+      })
+      .catch(function() {
+        var tbody = document.getElementById('hist-tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--red)">Ошибка загрузки</td></tr>';
+      });
+  };
+
+  window.histDelete = function(id, btn) {
+    btn.disabled = true;
+    fetch('/api/tasks/' + id, { method: 'DELETE' })
+      .then(function() { loadHistory(); })
+      .catch(function() { btn.disabled = false; });
+  };
 })();
 </script>
 </body>

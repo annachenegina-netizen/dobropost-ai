@@ -99,6 +99,21 @@ function getTasks() {
   return db.prepare('SELECT * FROM tasks ORDER BY createdAt DESC').all().map(rowToTask);
 }
 
+function getHistory({ type, search, dateFrom, dateTo } = {}) {
+  let q = "SELECT * FROM tasks WHERE status IN ('done','error','rejected')";
+  const p = [];
+  if (type)     { q += ' AND json_extract(tz,\'$.type\') = ?'; p.push(type); }
+  if (dateFrom) { q += ' AND createdAt >= ?'; p.push(new Date(dateFrom).getTime()); }
+  if (dateTo)   { q += ' AND createdAt <= ?'; p.push(new Date(dateTo).getTime() + 86399999); }
+  q += ' ORDER BY createdAt DESC LIMIT 200';
+  let rows = db.prepare(q).all(...p).map(rowToTask);
+  if (search) {
+    const s = search.toLowerCase();
+    rows = rows.filter(t => (t.tz?.title || '').toLowerCase().includes(s) || (t.fromName || '').toLowerCase().includes(s));
+  }
+  return rows;
+}
+
 function addSseClient(res) {
   sseClients.push(res);
   res.on('close', () => {
@@ -112,4 +127,4 @@ function broadcast(data) {
   sseClients.forEach(res => { try { res.write(msg); } catch (_) {} });
 }
 
-module.exports = { addTask, updateTask, removeTask, getTask, getTasks, addSseClient };
+module.exports = { addTask, updateTask, removeTask, getTask, getTasks, getHistory, addSseClient };

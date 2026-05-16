@@ -1,7 +1,7 @@
 // API задач: SSE-поток + выполнение + отклонение
 const express = require('express');
 const axios = require('axios');
-const { getTasks, getTask, updateTask, removeTask, addSseClient } = require('../taskStore');
+const { getTasks, getTask, updateTask, removeTask, addSseClient, getHistory } = require('../taskStore');
 
 const router = express.Router();
 
@@ -19,6 +19,12 @@ router.get('/events', (req, res) => {
 
 // GET /api/tasks — список всех задач
 router.get('/', (req, res) => res.json(getTasks()));
+
+// GET /api/tasks/history — завершённые задачи с фильтрами
+router.get('/history', (req, res) => {
+  const { type, search, dateFrom, dateTo } = req.query;
+  res.json(getHistory({ type, search, dateFrom, dateTo }));
+});
 
 // POST /api/tasks/:id/execute — выполнить задачу
 router.post('/:id/execute', async (req, res) => {
