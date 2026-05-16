@@ -12,6 +12,9 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
+@supports(padding:env(safe-area-inset-bottom)){
+  body{padding-bottom:env(safe-area-inset-bottom);padding-top:env(safe-area-inset-top);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+}
 :root{
   --bg:#0F1117;--bg2:#1A1D27;--bg3:#21253A;--bg4:#2A2F45;
   --acc:#C8FF57;--acc2:#A8E040;--acc-dim:rgba(200,255,87,0.12);--acc-dim2:rgba(200,255,87,0.06);
@@ -294,20 +297,22 @@ html,body{height:100%;overflow:hidden}
   .sidebar{position:fixed;left:-224px;top:0;height:100%;z-index:100;transition:left .25s cubic-bezier(.4,0,.2,1);box-shadow:none}
   .sidebar.open{left:0;box-shadow:4px 0 32px rgba(0,0,0,0.5)}
   .sb-overlay{display:block}
-  .tb-hamburger{display:flex}
+  .tb-hamburger{display:flex;flex-shrink:0}
   .tb-pills{display:none!important}
   #tb-commit{display:none!important}
-  .tb-logo{font-size:13px;white-space:nowrap;flex-shrink:0}
-  .tb-bell{margin-left:auto}
-  .topbar{padding:0 12px;gap:8px}
-  .content{padding:14px}
+  .tb-logo{font-size:13px;white-space:nowrap;flex-shrink:0;margin-right:0;flex:1}
+  .tb-bell{margin-left:auto!important;flex-shrink:0}
+  .tb-avatar{flex-shrink:0}
+  .topbar{padding:0 12px;gap:8px;overflow:hidden}
+  .content{padding:12px}
   .two-col{grid-template-columns:1fr}
   .mon-grid{grid-template-columns:1fr}
   .mon-card[style*="grid-column"]{grid-column:auto!important}
   .hist-filter{flex-wrap:wrap;gap:6px}
   .hist-input{min-width:0}
-  .statusbar{padding:0 14px;gap:12px;overflow-x:auto}
+  .statusbar{padding:0 12px;gap:10px;overflow-x:auto;font-size:10px}
   .task-card-grid{grid-template-columns:1fr!important}
+  .task-actions{flex-wrap:wrap}
 }
 </style>
 </head>
@@ -355,7 +360,7 @@ html,body{height:100%;overflow:hidden}
         <div class="tb-pill"><span class="tb-dot"></span>Sendsay</div>
         <div class="tb-pill"><span class="tb-dot warn"></span>TG Bot</div>
       </div>
-      <div class="tb-bell" style="margin-left:8px"><i class="ti ti-bell" style="font-size:18px"></i><div class="tb-badge">2</div></div>
+      <div class="tb-bell"><i class="ti ti-bell" style="font-size:18px"></i><div class="tb-badge">2</div></div>
       <div class="tb-avatar">ВЛ</div>
     </div>
 

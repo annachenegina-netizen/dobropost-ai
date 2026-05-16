@@ -1,5 +1,5 @@
 // Service Worker — сеть в приоритете, кэш как запасной вариант
-const CACHE = 'dobropost-v1';
+const CACHE = 'dobropost-v3';
 const PRECACHE = ['/', '/tabs/images.js'];
 
 self.addEventListener('install', e => {
