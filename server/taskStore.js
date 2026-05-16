@@ -1,7 +1,35 @@
-// Общее хранилище задач — связывает Telegram-бота и дашборд
-// SSE клиенты получают обновления в реальном времени
-const tasks = [];
+const Database = require('better-sqlite3');
+const path = require('path');
+
+const db = new Database(path.join(__dirname, '..', 'tasks.db'));
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS tasks (
+    id          TEXT PRIMARY KEY,
+    tz          TEXT,
+    fromName    TEXT DEFAULT '?',
+    sourceChatTitle TEXT,
+    telegramChatId  TEXT,
+    telegramMsgId   TEXT,
+    status      TEXT DEFAULT 'analyzing',
+    error       TEXT,
+    result      TEXT,
+    priority    TEXT,
+    deadline    TEXT,
+    createdAt   INTEGER
+  )
+`);
+
 const sseClients = [];
+
+function rowToTask(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    tz:     row.tz     ? JSON.parse(row.tz)     : null,
+    result: row.result ? JSON.parse(row.result) : null,
+  };
+}
 
 function addTask({ tz, fromName, sourceChatTitle, telegramChatId, telegramMsgId }) {
   const task = {
@@ -9,36 +37,67 @@ function addTask({ tz, fromName, sourceChatTitle, telegramChatId, telegramMsgId 
     tz,
     fromName: fromName || '?',
     sourceChatTitle: sourceChatTitle || null,
-    telegramChatId: telegramChatId || null,
-    telegramMsgId: telegramMsgId || null,
-    status: 'analyzing', // analyzing | pending | inprog | done | error | rejected
-    error: null,
-    result: null,
+    telegramChatId:  telegramChatId  ? String(telegramChatId)  : null,
+    telegramMsgId:   telegramMsgId   ? String(telegramMsgId)   : null,
+    status:   'analyzing',
+    error:    null,
+    result:   null,
+    priority: tz?.priority || null,
+    deadline: tz?.deadline || null,
     createdAt: Date.now(),
   };
-  tasks.push(task);
+
+  db.prepare(`
+    INSERT INTO tasks
+      (id, tz, fromName, sourceChatTitle, telegramChatId, telegramMsgId,
+       status, error, result, priority, deadline, createdAt)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+  `).run(
+    task.id, JSON.stringify(task.tz), task.fromName,
+    task.sourceChatTitle, task.telegramChatId, task.telegramMsgId,
+    task.status, task.error, null, task.priority, task.deadline, task.createdAt
+  );
+
   broadcast({ type: 'add', task });
   return task;
 }
 
 function updateTask(id, updates) {
-  const task = tasks.find(t => t.id === id);
-  if (!task) return null;
-  Object.assign(task, updates);
-  broadcast({ type: 'update', task });
-  return task;
+  const existing = getTask(id);
+  if (!existing) return null;
+
+  const setClauses = [];
+  const values = [];
+
+  for (const [key, val] of Object.entries(updates)) {
+    setClauses.push(`${key} = ?`);
+    values.push((key === 'tz' || key === 'result') && val != null
+      ? JSON.stringify(val)
+      : val ?? null);
+  }
+  values.push(id);
+
+  db.prepare(`UPDATE tasks SET ${setClauses.join(', ')} WHERE id = ?`).run(...values);
+
+  const updated = { ...existing, ...updates };
+  broadcast({ type: 'update', task: updated });
+  return updated;
 }
 
 function removeTask(id) {
-  const idx = tasks.findIndex(t => t.id === id);
-  if (idx === -1) return false;
-  tasks.splice(idx, 1);
+  const r = db.prepare('DELETE FROM tasks WHERE id = ?').run(id);
+  if (r.changes === 0) return false;
   broadcast({ type: 'remove', id });
   return true;
 }
 
-function getTask(id) { return tasks.find(t => t.id === id) || null; }
-function getTasks()  { return [...tasks]; }
+function getTask(id) {
+  return rowToTask(db.prepare('SELECT * FROM tasks WHERE id = ?').get(id));
+}
+
+function getTasks() {
+  return db.prepare('SELECT * FROM tasks ORDER BY createdAt DESC').all().map(rowToTask);
+}
 
 function addSseClient(res) {
   sseClients.push(res);
