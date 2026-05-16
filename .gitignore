@@ -19,3 +19,6 @@ Thumbs.db
 
 # Temp
 *.tmp
+
+# Database (хранится на сервере, не в git)
+*.db
