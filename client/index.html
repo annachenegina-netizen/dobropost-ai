@@ -40,6 +40,7 @@ html,body{height:100%;overflow:hidden}
 .topbar{height:52px;background:var(--bg2);border-bottom:0.5px solid var(--bdr);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0}
 .tb-logo{font-size:14px;font-weight:500;color:var(--acc);white-space:nowrap;flex-shrink:0}
 .tb-desktop{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.tb-pills{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
 .tb-pill{display:flex;align-items:center;gap:5px;background:var(--bg3);border:0.5px solid var(--bdr2);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--txt2)}
 .tb-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
 .tb-dot.warn{background:var(--orange)}
@@ -352,7 +353,6 @@ html,body{height:100%;overflow:hidden}
       <div class="tb-desktop">
         <div id="tb-commit" style="font-family:var(--font-mono);font-size:10px;color:var(--txt3);background:var(--bg3);border:0.5px solid var(--bdr);border-radius:6px;padding:3px 8px;cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px" title="">…</div>
         <div class="tb-pills">
-          <div class="tb-pill"><span class="tb-dot" id="pill-server" style="background:var(--green)"></span>Сервер</div>
           <div class="tb-pill"><span class="tb-dot" id="pill-openai" style="background:var(--txt3)"></span>OpenAI</div>
           <div class="tb-pill"><span class="tb-dot" id="pill-sendsay" style="background:var(--txt3)"></span>Sendsay</div>
           <div class="tb-pill"><span class="tb-dot" id="pill-tg" style="background:var(--txt3)"></span>TG Bot</div>
