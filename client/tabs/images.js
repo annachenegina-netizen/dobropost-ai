@@ -128,7 +128,7 @@ async function generateBanner() {
     showToast('Ошибка: ' + err.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = 'Сгенерировать баннер';
+    btn.innerHTML = '<i class="ti ti-sparkles" style="font-size:13px"></i>Сгенерировать баннер';
   }
 }
 

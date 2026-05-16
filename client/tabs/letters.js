@@ -49,7 +49,7 @@ async function layoutLetter() {
     showToast('Ошибка: ' + err.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = 'Сверстать письмо';
+    btn.innerHTML = 'Сверстать письмо <i class="ti ti-arrow-right" style="font-size:13px"></i>';
   }
 }
 
@@ -91,7 +91,7 @@ async function uploadBannerToSendsay(input) {
     showToast('Ошибка: ' + err.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = 'Загрузить в Sendsay';
+    btn.innerHTML = '<i class="ti ti-upload" style="font-size:13px"></i>';
   }
 }
 
@@ -115,7 +115,7 @@ async function loadDraftToSendsay() {
     showToast('Ошибка: ' + err.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = 'Загрузить код в Sendsay';
+    btn.innerHTML = '<i class="ti ti-cloud-upload" style="font-size:12px"></i>Создать черновик в Sendsay';
   }
 }
 

@@ -101,7 +101,7 @@ function renderQueue() {
 async function runArticlesQueue() {
   const btn = document.getElementById('articles-run-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ Работаю...';
+  btn.innerHTML = '<div class="spinner" style="width:13px;height:13px;border-width:2px"></div> Работаю...';
 
   for (let i = 0; i < articlesQueue.length; i++) {
     const item = articlesQueue[i];
@@ -169,10 +169,15 @@ async function runArticlesQueue() {
     }
   }
 
-  // Проверяем, остались ли ещё не обработанные
-  const pending = articlesQueue.filter(i => i.status !== STATUS.DONE && i.status !== STATUS.ERROR);
-  btn.textContent = pending.length ? '▶ Продолжить' : '✅ Всё готово';
-  btn.disabled = pending.length === 0;
+  // Проверяем, остались ли ещё не обработанные (ошибки можно повторить)
+  const remaining = articlesQueue.filter(i => i.status !== STATUS.DONE);
+  if (remaining.length) {
+    btn.innerHTML = '<i class="ti ti-player-play" style="font-size:13px"></i>Продолжить';
+    btn.disabled = false;
+  } else {
+    btn.innerHTML = '<i class="ti ti-check" style="font-size:13px"></i>Всё готово';
+    btn.disabled = true;
+  }
 }
 
 function clearArticlesQueue() {
@@ -180,7 +185,7 @@ function clearArticlesQueue() {
   renderQueue();
   const btn = document.getElementById('articles-run-btn');
   btn.disabled = true;
-  btn.textContent = '▶ Запустить все';
+  btn.innerHTML = '<i class="ti ti-player-play" style="font-size:13px"></i>Запустить все';
 }
 
 // ── УТИЛИТА ───────────────────────────────────────────────────────
