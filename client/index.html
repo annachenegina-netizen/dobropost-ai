@@ -714,6 +714,9 @@ html,body{height:100%;overflow:hidden}
               <button class="btn btn-danger" id="push-disable-btn" onclick="pushUnsubscribe()" style="display:none">
                 <i class="ti ti-bell-off" style="font-size:12px"></i>Отключить уведомления
               </button>
+              <button class="btn" id="push-test-btn" onclick="pushTest()" style="display:none">
+                <i class="ti ti-send" style="font-size:12px"></i>Тест уведомления
+              </button>
               <div style="font-size:11px;color:var(--txt3);line-height:1.5" id="push-hint"></div>
             </div>
           </div>
@@ -958,12 +961,15 @@ html,body{height:100%;overflow:hidden}
     }
 
     reg.pushManager.getSubscription().then(function(sub) {
+      var testBtn = document.getElementById('push-test-btn');
       if (sub) {
         statusEl.textContent = 'Включены ✓';
         statusEl.style.color = 'var(--green)';
         if (enableBtn)  enableBtn.style.display  = 'none';
         if (disableBtn) disableBtn.style.display = 'flex';
+        if (testBtn)    testBtn.style.display    = 'flex';
       } else {
+        if (testBtn) testBtn.style.display = 'none';
         statusEl.textContent = 'Отключены';
         statusEl.style.color = 'var(--txt3)';
         if (enableBtn)  enableBtn.style.display  = 'flex';
@@ -1015,8 +1021,20 @@ html,body{height:100%;overflow:hidden}
     });
   }
 
+  function pushTest() {
+    var btn = document.getElementById('push-test-btn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 spin" style="font-size:12px"></i>Отправляю…'; }
+    fetch('/api/push/test', { method: 'POST' })
+      .then(function(){ showToast('Уведомление отправлено'); })
+      .catch(function(){ showToast('Ошибка отправки'); })
+      .finally(function(){
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send" style="font-size:12px"></i>Тест уведомления'; }
+      });
+  }
+
   window.pushSubscribe   = pushSubscribe;
   window.pushUnsubscribe = pushUnsubscribe;
+  window.pushTest        = pushTest;
 
   // Инициализация push при загрузке
   if ('serviceWorker' in navigator) {

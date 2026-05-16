@@ -1,5 +1,5 @@
 const express = require('express');
-const { addPushSubscription, removePushSubscription } = require('../taskStore');
+const { addPushSubscription, removePushSubscription, sendPush } = require('../taskStore');
 
 const router = express.Router();
 
@@ -21,6 +21,12 @@ router.post('/unsubscribe', (req, res) => {
   const { endpoint } = req.body;
   if (!endpoint) return res.status(400).json({ error: 'Missing endpoint' });
   removePushSubscription(endpoint);
+  res.json({ ok: true });
+});
+
+// POST /api/push/test — тестовое уведомление
+router.post('/test', (req, res) => {
+  sendPush('🧪 Тест DobroPost AI', 'Push-уведомления работают!', '/');
   res.json({ ok: true });
 });
 
