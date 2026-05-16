@@ -135,4 +135,6 @@ async function createDraftInSendsay(html, subject, preheader) {
   return { ok: true, url: draftUrl };
 }
 
-module.exports = { uploadToSendsay, createDraftInSendsay };
+function resetSession() { _cachedSession = null; }
+
+module.exports = { uploadToSendsay, createDraftInSendsay, resetSession };

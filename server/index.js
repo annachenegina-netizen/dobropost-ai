@@ -4,6 +4,9 @@ const path = require('path');
 const { execSync } = require('child_process');
 require('dotenv').config();
 
+// Настройки из settings.json перекрывают .env (меняются через дашборд)
+require('./settings').apply();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -21,6 +24,7 @@ app.use('/api/sendsay',  require('./routes/sendsay'));
 app.use('/api/tasks',    require('./routes/tasks'));
 app.use('/api/monitor',  require('./routes/monitor'));
 app.use('/api/push',     require('./routes/push'));
+app.use('/api/settings', require('./routes/settings'));
 
 // Версия — последний git коммит
 app.get('/api/version', (req, res) => {

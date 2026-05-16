@@ -4,8 +4,8 @@ const OpenAI = require('openai');
 // const Anthropic = require('@anthropic-ai/sdk'); // <- Claude (включить позже)
 require('dotenv').config();
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-// const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }); // <- Claude
+const getClient = () => new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// const getClient = () => new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }); // <- Claude
 
 // Описания шаблонов — AI выбирает из этого списка
 const TEMPLATES = {
@@ -72,8 +72,8 @@ ${letterText}
 {"templateId": "...", "title": "...", "subtitle": "..."}`;
   }
 
-  const message = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const message = await getClient().chat.completions.create({
+    model: process.env.MODEL_MAIN || 'gpt-4o-mini',
     max_tokens: 300,
     messages: [{ role: 'user', content: prompt }]
   });
@@ -116,8 +116,8 @@ ${letterText}
 Верни ТОЛЬКО JSON без пояснений и markdown:
 {"subject":"...","preheader":"...","intro":"...","blocks":[{"type":"dark","badge":"","title":"...","text":"...","cta_text":"","cta_url":"#"}],"cta_text":"...","cta_url":"..."}`;
 
-  const message = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const message = await getClient().chat.completions.create({
+    model: process.env.MODEL_MAIN || 'gpt-4o-mini',
     max_tokens: 900,
     messages: [{ role: 'user', content: prompt }],
   });
@@ -420,8 +420,8 @@ ${rawText.slice(0, 4000)}
 Верни ТОЛЬКО JSON без пояснений и markdown:
 {"title":"...","excerpt":"...","category":"...","tags":["..."],"reading_time":3,"meta_description":"...","sections":[{"heading":"...","content":"..."}]}`;
 
-  const message = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const message = await getClient().chat.completions.create({
+    model: process.env.MODEL_MAIN || 'gpt-4o-mini',
     max_tokens: 1500,
     messages: [{ role: 'user', content: prompt }],
   });

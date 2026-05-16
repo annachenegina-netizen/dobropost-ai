@@ -3,7 +3,7 @@ const mammoth = require('mammoth');
 const OpenAI = require('openai');
 require('dotenv').config();
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const getClient = () => new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const SYSTEM_PROMPT = `Ты — нормализатор структуры статей для CMS.
 Тебе дают HTML, сконвертированный из DOCX (могут быть разные форматы от разных копирайтеров).
@@ -165,7 +165,7 @@ async function normalizeDocx(buffer) {
   // 3. AI нормализация
   const inputHtml = cleanHtml.length > 40000 ? cleanHtml.slice(0, 40000) + '\n<!-- ОБРЕЗАНО -->' : cleanHtml;
 
-  const message = await client.chat.completions.create({
+  const message = await getClient().chat.completions.create({
     model: 'gpt-4o',
     max_tokens: 16000,
     messages: [
