@@ -1,6 +1,7 @@
 // Точка входа — Express сервер
 const express = require('express');
 const path = require('path');
+const { execSync } = require('child_process');
 require('dotenv').config();
 
 const app = express();
@@ -19,6 +20,18 @@ app.use('/api/articles', require('./routes/articles'));
 app.use('/api/sendsay',  require('./routes/sendsay'));
 app.use('/api/tasks',    require('./routes/tasks'));
 app.use('/api/monitor',  require('./routes/monitor'));
+
+// Версия — последний git коммит
+app.get('/api/version', (req, res) => {
+  try {
+    const hash = execSync('git rev-parse --short HEAD').toString().trim();
+    const msg  = execSync('git log -1 --format=%s').toString().trim();
+    const date = execSync('git log -1 --format=%ci').toString().trim().slice(0, 16);
+    res.json({ hash, msg, date });
+  } catch (_) {
+    res.json({ hash: '—', msg: 'git недоступен', date: '' });
+  }
+});
 
 // Главная страница — дашборд
 app.get('/', (req, res) => {
