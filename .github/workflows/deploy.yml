@@ -16,6 +16,7 @@ jobs:
           key: ${{ secrets.SSH_DEPLOY_KEY }}
           script: |
             cd /opt/dobropost
-            git pull
+            git fetch origin
+            git reset --hard origin/main
             npm install --omit=dev
             pm2 restart dobropost-ai
