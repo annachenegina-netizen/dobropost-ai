@@ -1,0 +1,21 @@
+name: Deploy to server
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 170.168.34.26
+          username: root
+          key: ${{ secrets.SSH_DEPLOY_KEY }}
+          script: |
+            cd /opt/dobropost
+            git pull
+            npm install --omit=dev
+            pm2 restart dobropost-ai
