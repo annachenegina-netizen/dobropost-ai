@@ -608,60 +608,43 @@ html,body{height:100%;overflow:hidden}
            TAB: МОНИТОРИНГ
       ══════════════════════════════════════════════ -->
       <div class="tab-panel" id="tab-monitor">
-        <div class="wip-banner"><i class="ti ti-tool" style="font-size:14px;flex-shrink:0"></i>Данные пока статичны — реальный мониторинг балансов и сервера будет добавлен позже.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <span style="font-size:13px;font-weight:500;color:var(--txt2)">Статус системы</span>
+          <button class="btn" onclick="loadMonitor()" id="mon-refresh-btn"><i class="ti ti-refresh" style="font-size:12px"></i>Обновить</button>
+        </div>
         <div class="mon-grid">
-          <div class="mon-card">
+          <div class="mon-card" id="mon-openai">
             <div class="mon-card-title"><i class="ti ti-brain" style="font-size:14px;color:var(--acc)"></i>OpenAI API</div>
-            <div class="mon-big">$12.40</div>
-            <div class="mon-sub">Использовано $7.60 из $20</div>
-            <div class="mon-bar-wrap"><div class="mon-bar-fill" style="width:62%;background:var(--orange)"></div></div>
-            <div style="font-size:11px;color:var(--orange);display:flex;align-items:center;gap:5px;margin-top:4px"><i class="ti ti-alert-triangle" style="font-size:12px"></i>Предупреждение при менее $5</div>
-          </div>
-          <div class="mon-card">
-            <div class="mon-card-title"><i class="ti ti-server" style="font-size:14px;color:var(--blue)"></i>Хостинг RUVDS</div>
-            <div class="mon-big" style="color:var(--green)">Активен</div>
-            <div class="mon-sub">Оплачен до 15 июня 2026</div>
-            <div style="font-size:12px;color:var(--txt2);margin-top:8px">Осталось <span style="color:var(--txt);font-weight:500">31 день</span></div>
-            <div style="font-size:11px;color:var(--blue);margin-top:6px;display:flex;align-items:center;gap:5px"><i class="ti ti-bell" style="font-size:12px"></i>Напомнить за 7 дней</div>
-          </div>
-          <div class="mon-card">
-            <div class="mon-card-title"><i class="ti ti-mail" style="font-size:14px;color:var(--acc)"></i>Sendsay</div>
-            <div class="mon-row"><span class="mon-key">Статус</span><span style="color:var(--green);font-weight:500">Подключён</span></div>
-            <div class="mon-row"><span class="mon-key">Загружено файлов</span><span class="mon-val">47</span></div>
-            <div class="mon-row"><span class="mon-key">Черновиков создано</span><span class="mon-val">23</span></div>
+            <div class="mon-big" id="mon-openai-remaining" style="color:var(--txt3)">—</div>
+            <div class="mon-sub" id="mon-openai-sub">Загрузка…</div>
+            <div class="mon-bar-wrap"><div class="mon-bar-fill" id="mon-openai-bar" style="width:0%"></div></div>
           </div>
           <div class="mon-card">
             <div class="mon-card-title"><i class="ti ti-brand-telegram" style="font-size:14px;color:var(--blue)"></i>Telegram бот</div>
-            <div class="mon-row"><span class="mon-key">Статус</span><span style="color:var(--green);font-weight:500">Онлайн (polling)</span></div>
-            <div class="mon-row"><span class="mon-key">Обработано задач</span><span class="mon-val">12</span></div>
-            <div class="mon-row"><span class="mon-key">Последняя активность</span><span style="color:var(--txt2)">2 мин назад</span></div>
+            <div class="mon-row"><span class="mon-key">Статус</span><span id="mon-tg-status" style="font-weight:500;color:var(--txt3)">Загрузка…</span></div>
+            <div class="mon-row"><span class="mon-key">Имя бота</span><span class="mon-val" id="mon-tg-name">—</span></div>
+            <div class="mon-row"><span class="mon-key">Всего задач</span><span class="mon-val" id="mon-tg-total">—</span></div>
           </div>
           <div class="mon-card">
             <div class="mon-card-title"><i class="ti ti-cpu" style="font-size:14px;color:var(--purple)"></i>Сервер</div>
-            <div class="mon-row"><span class="mon-key">CPU</span><span class="mon-val">23%</span></div>
-            <div class="mon-row"><span class="mon-key">RAM</span><span class="mon-val">1.2 GB / 2 GB</span></div>
-            <div class="mon-row"><span class="mon-key">Uptime</span><span style="color:var(--txt2)">14д 6ч</span></div>
-            <div class="mon-row"><span class="mon-key">Disk</span><span style="color:var(--txt2)">8.4 / 40 GB</span></div>
-            <div class="sparkline-section">
-              <div class="sparkline-col"><div class="sparkline-label">CPU</div><div class="sparkline-bars" id="cpu-bars"></div></div>
-              <div class="sparkline-col"><div class="sparkline-label">RAM</div><div class="sparkline-bars" id="ram-bars"></div></div>
-            </div>
+            <div class="mon-row"><span class="mon-key">CPU load</span><span class="mon-val" id="mon-cpu">—</span></div>
+            <div class="mon-row"><span class="mon-key">RAM</span><span class="mon-val" id="mon-ram">—</span></div>
+            <div class="mon-row"><span class="mon-key">Disk</span><span class="mon-val" id="mon-disk">—</span></div>
+            <div class="mon-row"><span class="mon-key">Uptime</span><span class="mon-val" id="mon-uptime">—</span></div>
           </div>
           <div class="mon-card">
+            <div class="mon-card-title"><i class="ti ti-chart-pie" style="font-size:14px;color:var(--acc)"></i>Задачи</div>
+            <div class="mon-row"><span class="mon-key">В работе</span><span class="mon-val" id="mon-act-active">—</span></div>
+            <div class="mon-row"><span class="mon-key">Выполнено</span><span class="mon-val" id="mon-act-done">—</span></div>
+            <div class="mon-row"><span class="mon-key">Письма</span><span class="mon-val" id="mon-act-letter">—</span></div>
+            <div class="mon-row"><span class="mon-key">Баннеры</span><span class="mon-val" id="mon-act-banner">—</span></div>
+            <div class="mon-row"><span class="mon-key">Статьи</span><span class="mon-val" id="mon-act-article">—</span></div>
+          </div>
+          <div class="mon-card" style="grid-column:1/-1">
             <div class="mon-card-title"><i class="ti ti-chart-bar" style="font-size:14px;color:var(--acc)"></i>Активность за 7 дней</div>
             <div class="act-chart" id="act-bars"></div>
-            <div style="display:flex;gap:12px;flex-wrap:wrap">
-              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2)"><span style="width:10px;height:10px;border-radius:2px;background:var(--acc);display:inline-block"></span>Письма 18</div>
-              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2)"><span style="width:10px;height:10px;border-radius:2px;background:var(--blue);display:inline-block"></span>Баннеры 31</div>
-              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2)"><span style="width:10px;height:10px;border-radius:2px;background:var(--purple);display:inline-block"></span>Статьи 7</div>
-            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px" id="mon-legend"></div>
           </div>
-        </div>
-        <div class="sec-label">Уведомления</div>
-        <div class="notif-feed">
-          <div class="notif"><div class="ndot" style="background:var(--red)"></div><span class="notif-time">2 дня назад:</span><span style="color:var(--txt)">Баланс OpenAI опустился ниже $15</span></div>
-          <div class="notif"><div class="ndot" style="background:var(--orange)"></div><span class="notif-time">5 дней назад:</span><span style="color:var(--txt)">Хостинг: 36 дней до оплаты</span></div>
-          <div class="notif"><div class="ndot" style="background:var(--green)"></div><span class="notif-time">7 дней назад:</span><span style="color:var(--txt)">Sendsay сессия обновлена автоматически</span></div>
         </div>
       </div>
 
@@ -724,7 +707,7 @@ html,body{height:100%;overflow:hidden}
     document.querySelectorAll('.sb-item').forEach(function(i){ i.classList.remove('active'); });
     document.getElementById('tab-' + id).classList.add('active');
     el.classList.add('active');
-    if (id === 'monitor') buildCharts();
+    if (id === 'monitor') loadMonitor();
     if (id === 'banners') { if (typeof renderTemplatePicker === 'function') renderTemplatePicker(); }
     if (id === 'history') loadHistory();
   }
@@ -767,36 +750,120 @@ html,body{height:100%;overflow:hidden}
     }
   }, 0);
 
-  // ── Monitor charts ────────────────────────────────────────────────
-  var chartsBuilt = false;
-  function buildCharts() {
-    if (chartsBuilt) return;
-    chartsBuilt = true;
-    var cpuData = [15,18,23,20,25,22,23];
-    var ramData = [55,58,60,59,61,60,60];
-    var cpuEl = document.getElementById('cpu-bars');
-    if (cpuEl) cpuData.forEach(function(v){
-      var b = document.createElement('div');
-      b.style.cssText = 'flex:1;background:#A78BFA;opacity:0.75;border-radius:2px 2px 0 0;height:'+Math.round((v/30)*100)+'%';
-      cpuEl.appendChild(b);
-    });
-    var ramEl = document.getElementById('ram-bars');
-    if (ramEl) ramData.forEach(function(v){
-      var b = document.createElement('div');
-      b.style.cssText = 'flex:1;background:#60A5FA;opacity:0.75;border-radius:2px 2px 0 0;height:'+Math.round((v/65)*100)+'%';
-      ramEl.appendChild(b);
-    });
-    var acts = [{val:18,color:'#C8FF57'},{val:31,color:'#60A5FA'},{val:7,color:'#A78BFA'}];
-    var actEl = document.getElementById('act-bars');
-    if (actEl) acts.forEach(function(a){
-      var grp = document.createElement('div');
-      grp.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;height:100%';
-      var bar = document.createElement('div');
-      bar.style.cssText = 'width:100%;border-radius:3px 3px 0 0;opacity:0.85;background:'+a.color+';height:'+Math.round((a.val/31)*64)+'px';
-      grp.appendChild(bar);
-      actEl.appendChild(grp);
+  // ── Monitor ────────────────────────────────────────────────────────
+  function fmtBytes(b) {
+    if (!b) return '—';
+    if (b >= 1e9) return (b/1e9).toFixed(1) + ' GB';
+    return (b/1e6).toFixed(0) + ' MB';
+  }
+  function fmtUptime(s) {
+    var d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60);
+    return (d ? d+'д ' : '') + (h ? h+'ч ' : '') + m+'м';
+  }
+
+  function loadMonitor() {
+    var btn = document.getElementById('mon-refresh-btn');
+    if (btn) btn.disabled = true;
+
+    fetch('/api/monitor').then(function(r){ return r.json(); }).then(function(d) {
+      // OpenAI
+      var oaiRem = document.getElementById('mon-openai-remaining');
+      var oaiSub = document.getElementById('mon-openai-sub');
+      var oaiBar = document.getElementById('mon-openai-bar');
+      if (d.openai) {
+        var rem = d.openai.remaining, total = d.openai.total, used = d.openai.used;
+        oaiRem.textContent = '$' + rem.toFixed(2);
+        oaiRem.style.color = rem < 5 ? 'var(--red)' : rem < 10 ? 'var(--orange)' : 'var(--green)';
+        oaiSub.textContent = 'Использовано $' + used.toFixed(2) + ' из $' + total.toFixed(2);
+        var pct = total > 0 ? Math.round((used/total)*100) : 0;
+        oaiBar.style.width = pct + '%';
+        oaiBar.style.background = pct > 80 ? 'var(--red)' : pct > 50 ? 'var(--orange)' : 'var(--acc)';
+      } else {
+        oaiRem.textContent = 'н/д';
+        oaiSub.textContent = 'Биллинг API недоступен для этого аккаунта';
+        oaiBar.style.width = '0%';
+      }
+
+      // Telegram
+      var tgSt = document.getElementById('mon-tg-status');
+      var tgNm = document.getElementById('mon-tg-name');
+      if (d.telegram && d.telegram.ok) {
+        tgSt.textContent = 'Онлайн';
+        tgSt.style.color = 'var(--green)';
+        tgNm.textContent = '@' + d.telegram.username;
+      } else {
+        tgSt.textContent = 'Нет связи';
+        tgSt.style.color = 'var(--red)';
+        tgNm.textContent = '—';
+      }
+
+      // Activity
+      if (d.activity) {
+        var set = function(id, v){ var el=document.getElementById(id); if(el) el.textContent = v!=null?v:'—'; };
+        set('mon-tg-total',    d.activity.total);
+        set('mon-act-active',  d.activity.active);
+        set('mon-act-done',    d.activity.done);
+        set('mon-act-letter',  d.activity.byType.letter  || 0);
+        set('mon-act-banner',  d.activity.byType.banner  || 0);
+        set('mon-act-article', d.activity.byType.article || 0);
+
+        // График за 7 дней
+        var actEl = document.getElementById('act-bars');
+        var legEl = document.getElementById('mon-legend');
+        if (actEl && d.activity.weeklyByDay) {
+          actEl.innerHTML = '';
+          var days = Object.keys(d.activity.weeklyByDay);
+          var types = [{key:'letter',color:'var(--acc)',label:'Письма'},{key:'banner',color:'var(--blue)',label:'Баннеры'},{key:'article',color:'var(--purple)',label:'Статьи'}];
+          var maxVal = 1;
+          days.forEach(function(day){
+            types.forEach(function(t){ maxVal = Math.max(maxVal, d.activity.weeklyByDay[day][t.key]||0); });
+          });
+          days.forEach(function(day){
+            var grp = document.createElement('div');
+            grp.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:1;height:100%;gap:1px';
+            types.forEach(function(t){
+              var v = d.activity.weeklyByDay[day][t.key] || 0;
+              var bar = document.createElement('div');
+              var h = v > 0 ? Math.max(4, Math.round((v/maxVal)*56)) : 0;
+              bar.style.cssText = 'width:100%;border-radius:2px;background:'+t.color+';height:'+h+'px;opacity:0.8';
+              grp.appendChild(bar);
+            });
+            var lbl = document.createElement('div');
+            lbl.style.cssText = 'font-size:9px;color:var(--txt3);margin-top:3px;text-align:center';
+            lbl.textContent = day.slice(5);
+            grp.appendChild(lbl);
+            actEl.appendChild(grp);
+          });
+
+          // Легенда с реальными числами
+          if (legEl) {
+            legEl.innerHTML = '';
+            types.forEach(function(t){
+              var total = days.reduce(function(s,day){ return s+(d.activity.weeklyByDay[day][t.key]||0); },0);
+              legEl.innerHTML += '<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--txt2)"><span style="width:10px;height:10px;border-radius:2px;background:'+t.color+';display:inline-block"></span>'+t.label+' '+total+'</div>';
+            });
+          }
+        }
+      }
+
+      // Сервер
+      if (d.server) {
+        var s = d.server;
+        var cpuEl = document.getElementById('mon-cpu');
+        if (cpuEl) cpuEl.textContent = s.loadAvg != null ? s.loadAvg.toFixed(2) + ' (load avg)' : '—';
+        var ramEl = document.getElementById('mon-ram');
+        if (ramEl) ramEl.textContent = fmtBytes(s.ramUsed) + ' / ' + fmtBytes(s.ramTotal);
+        var diskEl = document.getElementById('mon-disk');
+        if (diskEl) diskEl.textContent = s.diskUsed != null ? fmtBytes(s.diskUsed) + ' / ' + fmtBytes(s.diskTotal) : '—';
+        var upEl = document.getElementById('mon-uptime');
+        if (upEl) upEl.textContent = s.uptime ? fmtUptime(s.uptime) : '—';
+      }
+
+    }).catch(function(){ /* тихо */ }).finally(function(){
+      if (btn) btn.disabled = false;
     });
   }
+  window.loadMonitor = loadMonitor;
 
   // ── Живые задачи из Telegram (SSE) ───────────────────────────────────────────
   var taskMap = {};

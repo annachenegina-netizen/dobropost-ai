@@ -18,6 +18,7 @@ app.use('/api/letters',  require('./routes/letters'));
 app.use('/api/articles', require('./routes/articles'));
 app.use('/api/sendsay',  require('./routes/sendsay'));
 app.use('/api/tasks',    require('./routes/tasks'));
+app.use('/api/monitor',  require('./routes/monitor'));
 
 // Главная страница — дашборд
 app.get('/', (req, res) => {
