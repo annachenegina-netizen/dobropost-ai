@@ -1,5 +1,6 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const webpush = require('web-push');
 
 const db = new Database(path.join(__dirname, '..', 'tasks.db'));
 
@@ -17,8 +18,21 @@ db.exec(`
     priority    TEXT,
     deadline    TEXT,
     createdAt   INTEGER
-  )
+  );
+  CREATE TABLE IF NOT EXISTS push_subscriptions (
+    endpoint    TEXT PRIMARY KEY,
+    sub         TEXT NOT NULL,
+    createdAt   INTEGER
+  );
 `);
+
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || 'mailto:admin@dobropost.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 
 const sseClients = [];
 
@@ -127,4 +141,31 @@ function broadcast(data) {
   sseClients.forEach(res => { try { res.write(msg); } catch (_) {} });
 }
 
-module.exports = { addTask, updateTask, removeTask, getTask, getTasks, getHistory, addSseClient };
+function addPushSubscription(sub) {
+  db.prepare(`
+    INSERT OR REPLACE INTO push_subscriptions (endpoint, sub, createdAt)
+    VALUES (?, ?, ?)
+  `).run(sub.endpoint, JSON.stringify(sub), Date.now());
+}
+
+function removePushSubscription(endpoint) {
+  db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(endpoint);
+}
+
+function sendPush(title, body, url) {
+  if (!process.env.VAPID_PUBLIC_KEY) return;
+  const subs = db.prepare('SELECT sub FROM push_subscriptions').all();
+  const payload = JSON.stringify({ title, body, url: url || '/', tag: 'dobropost-task' });
+  subs.forEach(row => {
+    try {
+      webpush.sendNotification(JSON.parse(row.sub), payload).catch(err => {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          db.prepare('DELETE FROM push_subscriptions WHERE sub LIKE ?')
+            .run('%' + JSON.parse(row.sub).endpoint + '%');
+        }
+      });
+    } catch (_) {}
+  });
+}
+
+module.exports = { addTask, updateTask, removeTask, getTask, getTasks, getHistory, addSseClient, addPushSubscription, removePushSubscription, sendPush };

@@ -20,6 +20,7 @@ app.use('/api/articles', require('./routes/articles'));
 app.use('/api/sendsay',  require('./routes/sendsay'));
 app.use('/api/tasks',    require('./routes/tasks'));
 app.use('/api/monitor',  require('./routes/monitor'));
+app.use('/api/push',     require('./routes/push'));
 
 // Версия — последний git коммит
 app.get('/api/version', (req, res) => {

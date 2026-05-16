@@ -295,8 +295,11 @@ html,body{height:100%;overflow:hidden}
   .sidebar.open{left:0;box-shadow:4px 0 32px rgba(0,0,0,0.5)}
   .sb-overlay{display:block}
   .tb-hamburger{display:flex}
-  .tb-pills{display:none}
-  .topbar{padding:0 14px}
+  .tb-pills{display:none!important}
+  #tb-commit{display:none!important}
+  .tb-logo{font-size:13px;white-space:nowrap;flex-shrink:0}
+  .tb-bell{margin-left:auto}
+  .topbar{padding:0 12px;gap:8px}
   .content{padding:14px}
   .two-col{grid-template-columns:1fr}
   .mon-grid{grid-template-columns:1fr}
@@ -694,11 +697,20 @@ html,body{height:100%;overflow:hidden}
             <div class="sett-row"><span class="sett-key">QA агент<span class="wip-badge">скоро будет</span></span><select class="sett-select" disabled><option>gpt-4o-mini</option><option>gpt-4o</option></select></div>
           </div>
           <div class="sett-section">
-            <div class="sett-title"><i class="ti ti-bell" style="font-size:14px;color:var(--orange)"></i>Уведомления<span class="wip-badge">скоро будет</span></div>
-            <div class="sett-row"><span class="sett-key">Порог баланса OpenAI ($)<span class="wip-badge">скоро будет</span></span><input class="sett-number" type="number" value="5" disabled></div>
-            <div class="sett-row"><span class="sett-key">Напомнить о хостинге (дней)<span class="wip-badge">скоро будет</span></span><input class="sett-number" type="number" value="7" disabled></div>
-            <div class="sett-row"><span class="sett-key">Telegram Chat ID<span class="wip-badge">скоро будет</span></span><input class="sett-input" type="text" placeholder="-100xxxxxxxxxx" style="font-family:var(--font-mono)" disabled></div>
-            <div class="sett-row"><span class="sett-key">TG уведомления<span class="wip-badge">скоро будет</span></span><button class="toggle" disabled style="opacity:0.4"></button></div>
+            <div class="sett-title"><i class="ti ti-bell" style="font-size:14px;color:var(--orange)"></i>Push-уведомления</div>
+            <div class="sett-row">
+              <span class="sett-key">Статус</span>
+              <span id="push-status-text" style="font-size:12px;color:var(--txt2)">Загрузка…</span>
+            </div>
+            <div class="sett-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+              <button class="btn btn-primary" id="push-enable-btn" onclick="pushSubscribe()" style="display:none">
+                <i class="ti ti-bell" style="font-size:12px"></i>Включить уведомления
+              </button>
+              <button class="btn btn-danger" id="push-disable-btn" onclick="pushUnsubscribe()" style="display:none">
+                <i class="ti ti-bell-off" style="font-size:12px"></i>Отключить уведомления
+              </button>
+              <div style="font-size:11px;color:var(--txt3);line-height:1.5" id="push-hint"></div>
+            </div>
           </div>
           <div class="sett-section">
             <div class="sett-title"><i class="ti ti-adjustments" style="font-size:14px;color:var(--blue)"></i>Лимиты генерации</div>
@@ -908,6 +920,106 @@ html,body{height:100%;overflow:hidden}
     });
   }
   window.loadMonitor = loadMonitor;
+
+  // ── Push-уведомления ─────────────────────────────────────────────
+  var VAPID_PUBLIC_KEY = null;
+
+  function urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var raw = atob(base64);
+    var arr = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    return arr;
+  }
+
+  function pushUpdateUI(reg) {
+    var statusEl = document.getElementById('push-status-text');
+    var enableBtn = document.getElementById('push-enable-btn');
+    var disableBtn = document.getElementById('push-disable-btn');
+    var hintEl = document.getElementById('push-hint');
+    if (!statusEl) return;
+
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      statusEl.textContent = 'Не поддерживается браузером';
+      statusEl.style.color = 'var(--red)';
+      if (hintEl) hintEl.textContent = 'Используйте Safari на iOS 16.4+ и добавьте сайт на экран «Домой»';
+      return;
+    }
+    if (!VAPID_PUBLIC_KEY) {
+      statusEl.textContent = 'VAPID ключи не настроены на сервере';
+      statusEl.style.color = 'var(--orange)';
+      return;
+    }
+
+    reg.pushManager.getSubscription().then(function(sub) {
+      if (sub) {
+        statusEl.textContent = 'Включены ✓';
+        statusEl.style.color = 'var(--green)';
+        if (enableBtn)  enableBtn.style.display  = 'none';
+        if (disableBtn) disableBtn.style.display = 'flex';
+      } else {
+        statusEl.textContent = 'Отключены';
+        statusEl.style.color = 'var(--txt3)';
+        if (enableBtn)  enableBtn.style.display  = 'flex';
+        if (disableBtn) disableBtn.style.display = 'none';
+        if (hintEl && /iPhone|iPad/.test(navigator.userAgent) && !window.matchMedia('(display-mode: standalone)').matches) {
+          hintEl.textContent = 'Для уведомлений на iPhone: откройте в Safari → Поделиться → На экран «Домой» → затем нажмите кнопку выше';
+        }
+      }
+    });
+  }
+
+  function pushSubscribe() {
+    if (!VAPID_PUBLIC_KEY) return;
+    navigator.serviceWorker.ready.then(function(reg) {
+      return reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }).then(function(sub) {
+      return fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sub)
+      });
+    }).then(function() {
+      navigator.serviceWorker.ready.then(pushUpdateUI);
+      showToast('Уведомления включены');
+    }).catch(function(err) {
+      showToast('Ошибка: ' + err.message);
+    });
+  }
+
+  function pushUnsubscribe() {
+    navigator.serviceWorker.ready.then(function(reg) {
+      return reg.pushManager.getSubscription();
+    }).then(function(sub) {
+      if (!sub) return;
+      var endpoint = sub.endpoint;
+      return sub.unsubscribe().then(function() {
+        return fetch('/api/push/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint })
+        });
+      });
+    }).then(function() {
+      navigator.serviceWorker.ready.then(pushUpdateUI);
+      showToast('Уведомления отключены');
+    });
+  }
+
+  window.pushSubscribe   = pushSubscribe;
+  window.pushUnsubscribe = pushUnsubscribe;
+
+  // Инициализация push при загрузке
+  if ('serviceWorker' in navigator) {
+    fetch('/api/push/vapid-public-key').then(function(r){ return r.json(); }).then(function(d) {
+      if (d.key) VAPID_PUBLIC_KEY = d.key;
+      navigator.serviceWorker.ready.then(pushUpdateUI);
+    }).catch(function(){});
+  }
 
   // ── Git версия в топбаре ──────────────────────────────────────────
   fetch('/api/version').then(function(r){ return r.json(); }).then(function(d) {

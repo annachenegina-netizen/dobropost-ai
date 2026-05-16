@@ -1,7 +1,7 @@
 // API задач: SSE-поток + выполнение + отклонение
 const express = require('express');
 const axios = require('axios');
-const { getTasks, getTask, updateTask, removeTask, addSseClient, getHistory } = require('../taskStore');
+const { getTasks, getTask, updateTask, removeTask, addSseClient, getHistory, sendPush } = require('../taskStore');
 
 const router = express.Router();
 
@@ -39,8 +39,12 @@ router.post('/:id/execute', async (req, res) => {
   try {
     const result = await executeTask(task);
     updateTask(task.id, { status: 'done', result });
+    const title = task.tz?.title || 'Задача выполнена';
+    const typeLabel = { banner: 'Баннер', letter: 'Письмо', article: 'Статья' }[task.tz?.type] || 'Задача';
+    sendPush('✅ ' + typeLabel + ' готов', title, '/');
   } catch (err) {
     updateTask(task.id, { status: 'error', error: err.message });
+    sendPush('❌ Ошибка выполнения', task.tz?.title || err.message, '/');
   }
 });
 
