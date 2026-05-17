@@ -4,25 +4,13 @@ const { parseTzFromMessage } = require('../agents/claude');
 const { addTask, updateTask, getTask } = require('../taskStore');
 const { recall } = require('../agents/rag');
 const { remember } = require('../agents/rag');
-const { checkBanner, checkLetter } = require('../agents/tester');
+const { checkBanner, checkLetter, addTesterLog, getTesterLog, addTesterSseClient, removeTesterSseClient } = require('../agents/tester');
 const axios = require('axios');
 
 const router = express.Router();
 
-// Лог тестировщика — последние 100 записей в памяти
-const testerLog = [];
-function addTesterLog(entry) {
-  testerLog.unshift({ ...entry, ts: new Date().toLocaleTimeString('ru') });
-  if (testerLog.length > 100) testerLog.pop();
-  // Рассылаем SSE-клиентам тестировщика
-  testerSseClients.forEach(res => {
-    try { res.write(`data: ${JSON.stringify(entry)}\n\n`); } catch (_) {}
-  });
-}
-const testerSseClients = [];
-
 // GET /api/ai/tester-log — лог последних проверок
-router.get('/tester-log', (req, res) => res.json(testerLog));
+router.get('/tester-log', (req, res) => res.json(getTesterLog()));
 
 // GET /api/ai/tester-events — SSE поток логов тестировщика
 router.get('/tester-events', (req, res) => {
@@ -30,11 +18,8 @@ router.get('/tester-events', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
-  testerSseClients.push(res);
-  req.on('close', () => {
-    const i = testerSseClients.indexOf(res);
-    if (i !== -1) testerSseClients.splice(i, 1);
-  });
+  addTesterSseClient(res);
+  req.on('close', () => removeTesterSseClient(res));
 });
 
 // POST /api/ai/chat — принять сообщение, создать и выполнить задачу
@@ -102,11 +87,12 @@ async function _runPipeline(taskId, tz, originalMessage) {
 
     if (tz.type === 'letter') {
       console.log(`[AI] 📧 Шаг 2: генерация письма...`);
+      const bannerUrl = bannerResult?.imageUrl || null;
       const letterResult = await _runWithTester(
         'letter', taskId,
         async (prompt) => {
-          console.log(`[AI] → POST /api/letters/generate`);
-          const r = await axios.post(`${base}/api/letters/generate`, { letterText: prompt });
+          console.log(`[AI] → POST /api/letters/generate (bannerUrl: ${bannerUrl})`);
+          const r = await axios.post(`${base}/api/letters/generate`, { letterText: prompt, bannerUrl });
           console.log(`[AI] ← Письмо: тема "${r.data.subject}"`);
           return r.data;
         },

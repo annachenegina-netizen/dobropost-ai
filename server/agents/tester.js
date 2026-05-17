@@ -97,4 +97,24 @@ ${text}
   }
 }
 
-module.exports = { checkBanner, checkLetter };
+// Лог проверок — последние 100 записей, доступен из любого роута
+const testerLog = [];
+const testerSseClients = [];
+
+function addTesterLog(entry) {
+  const record = { ...entry, ts: new Date().toLocaleTimeString('ru') };
+  testerLog.unshift(record);
+  if (testerLog.length > 100) testerLog.pop();
+  testerSseClients.forEach(res => {
+    try { res.write(`data: ${JSON.stringify(record)}\n\n`); } catch (_) {}
+  });
+}
+
+function getTesterLog() { return testerLog; }
+function addTesterSseClient(res) { testerSseClients.push(res); }
+function removeTesterSseClient(res) {
+  const i = testerSseClients.indexOf(res);
+  if (i !== -1) testerSseClients.splice(i, 1);
+}
+
+module.exports = { checkBanner, checkLetter, addTesterLog, getTesterLog, addTesterSseClient, removeTesterSseClient };

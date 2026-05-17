@@ -3,7 +3,7 @@ const express = require('express');
 const axios = require('axios');
 const { getTasks, getTask, updateTask, removeTask, addSseClient, getHistory, sendPush } = require('../taskStore');
 const { remember, recall } = require('../agents/rag');
-const { checkBanner, checkLetter } = require('../agents/tester');
+const { checkBanner, checkLetter, addTesterLog } = require('../agents/tester');
 
 const router = express.Router();
 
@@ -99,18 +99,18 @@ async function executeTask(task) {
   const enrichedText = query + memoryContext;
 
   if (tz.type === 'banner') {
-    return await _executeBannerWithReview(base, enrichedText, tz.template || null);
+    return await _executeBannerWithReview(base, enrichedText, tz.template || null, task.id);
   }
 
   if (tz.type === 'letter') {
-    return await _executeLetterWithReview(base, enrichedText);
+    return await _executeLetterWithReview(base, enrichedText, task.id);
   }
 
   return {};
 }
 
 // Генерирует баннер и проверяет тестировщиком (макс. 3 попытки)
-async function _executeBannerWithReview(base, letterText, templateId) {
+async function _executeBannerWithReview(base, letterText, templateId, taskId) {
   const MAX = 3;
   let lastIssues = [];
 
@@ -120,9 +120,11 @@ async function _executeBannerWithReview(base, letterText, templateId) {
       : letterText;
 
     const resp = await axios.post(`${base}/api/images/generate`, { letterText: prompt, templateId });
+    addTesterLog({ type: 'banner', taskId, attempt, status: 'checking', data: resp.data.imageUrl });
     console.log(`[Tester] Баннер попытка ${attempt}: ${resp.data.imageUrl}`);
 
     const check = await checkBanner(resp.data.imageUrl).catch(() => ({ ok: true }));
+    addTesterLog({ type: 'banner', taskId, attempt, status: check.ok ? 'ok' : 'fail', issues: check.issues || [] });
     console.log(`[Tester] Баннер результат:`, check);
 
     if (check.ok) {
@@ -131,13 +133,17 @@ async function _executeBannerWithReview(base, letterText, templateId) {
     lastIssues = check.issues || [];
   }
 
-  // После 3 попыток — возвращаем последний результат
   const final = await axios.post(`${base}/api/images/generate`, { letterText, templateId });
+  addTesterLog({ type: 'banner', taskId, attempt: MAX, status: 'forced', issues: ['Исчерпаны попытки'] });
   return { imageUrl: final.data.imageUrl, title: final.data.title, templateId: final.data.templateId };
 }
 
-// Верстает письмо и проверяет тестировщиком (макс. 3 попытки)
-async function _executeLetterWithReview(base, letterText) {
+// Верстает письмо с баннером и проверяет тестировщиком (макс. 3 попытки)
+async function _executeLetterWithReview(base, letterText, taskId) {
+  // Сначала генерируем баннер
+  const bannerResult = await _executeBannerWithReview(base, letterText, null, taskId);
+  const bannerUrl = bannerResult?.imageUrl || null;
+
   const MAX = 3;
   let lastIssues = [];
 
@@ -146,10 +152,12 @@ async function _executeLetterWithReview(base, letterText) {
       ? `${letterText}\n\nПредыдущая версия письма была отклонена тестировщиком. Исправь: ${lastIssues.join('; ')}`
       : letterText;
 
-    const gen = await axios.post(`${base}/api/letters/generate`, { letterText: prompt });
-    console.log(`[Tester] Письмо попытка ${attempt}`);
+    const gen = await axios.post(`${base}/api/letters/generate`, { letterText: prompt, bannerUrl });
+    addTesterLog({ type: 'letter', taskId, attempt, status: 'checking', data: gen.data.subject });
+    console.log(`[Tester] Письмо попытка ${attempt}: "${gen.data.subject}"`);
 
     const check = await checkLetter(gen.data.html).catch(() => ({ ok: true }));
+    addTesterLog({ type: 'letter', taskId, attempt, status: check.ok ? 'ok' : 'fail', issues: check.issues || [] });
     console.log(`[Tester] Письмо результат:`, check);
 
     if (check.ok) {
@@ -164,7 +172,8 @@ async function _executeLetterWithReview(base, letterText) {
   }
 
   // После 3 попыток — заливаем последнюю версию
-  const final = await axios.post(`${base}/api/letters/generate`, { letterText });
+  const final = await axios.post(`${base}/api/letters/generate`, { letterText, bannerUrl });
+  addTesterLog({ type: 'letter', taskId, attempt: MAX, status: 'forced', issues: ['Исчерпаны попытки'] });
   const draft = await axios.post(`${base}/api/sendsay/draft`, {
     subject: final.data.subject,
     preheader: final.data.preheader,
