@@ -2,7 +2,7 @@
 const express = require('express');
 const axios = require('axios');
 const { getTasks, getTask, updateTask, removeTask, addSseClient, getHistory, sendPush } = require('../taskStore');
-const { remember } = require('../agents/rag');
+const { remember, recall } = require('../agents/rag');
 
 const router = express.Router();
 
@@ -77,10 +77,22 @@ router.delete('/:id', (req, res) => {
 async function executeTask(task) {
   const { tz } = task;
   const base = `http://localhost:${process.env.PORT || 3000}`;
+  const query = tz.text || tz.title || '';
+
+  // Достаём похожие прошлые задачи из памяти
+  const memories = await recall(query, tz.type).catch(() => []);
+  const memoryContext = memories.length
+    ? '\n\n---\nПохожие задачи из прошлого опыта:\n' +
+      memories.map((m, i) =>
+        `${i + 1}. Запрос: ${m.query}\n   Результат: ${m.result}`
+      ).join('\n')
+    : '';
+
+  const enrichedText = query + memoryContext;
 
   if (tz.type === 'banner') {
     const resp = await axios.post(`${base}/api/images/generate`, {
-      letterText: tz.text || tz.title,
+      letterText: enrichedText,
       templateId: tz.template || null,
     });
     return { imageUrl: resp.data.imageUrl, title: resp.data.title, templateId: resp.data.templateId };
@@ -88,7 +100,7 @@ async function executeTask(task) {
 
   if (tz.type === 'letter') {
     const gen = await axios.post(`${base}/api/letters/generate`, {
-      letterText: tz.text || tz.title,
+      letterText: enrichedText,
     });
     await axios.post(`${base}/api/sendsay/draft`, {
       subject: gen.data.subject,
