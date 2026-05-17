@@ -2,6 +2,7 @@
 const express = require('express');
 const axios = require('axios');
 const { getTasks, getTask, updateTask, removeTask, addSseClient, getHistory, sendPush } = require('../taskStore');
+const { remember } = require('../agents/rag');
 
 const router = express.Router();
 
@@ -42,6 +43,12 @@ router.post('/:id/execute', async (req, res) => {
     const title = task.tz?.title || 'Задача выполнена';
     const typeLabel = { banner: 'Баннер', letter: 'Письмо', article: 'Статья' }[task.tz?.type] || 'Задача';
     sendPush('✅ ' + typeLabel + ' готов', title, '/');
+    remember({
+      taskType: task.tz?.type || 'task',
+      query:    task.tz?.text || task.tz?.title || '',
+      result:   JSON.stringify(result),
+      metadata: { title: task.tz?.title, template: task.tz?.template },
+    }).catch(() => {});
   } catch (err) {
     updateTask(task.id, { status: 'error', error: err.message });
     sendPush('❌ Ошибка выполнения', task.tz?.title || err.message, '/');

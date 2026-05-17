@@ -114,6 +114,10 @@ function startBot() {
       );
       removeTask(taskId);
       pendingTasks.delete(taskId);
+    } else if (action === 'execute') {
+      bot.answerCallbackQuery(query.id, { text: '🤖 Запускаю...' });
+      pendingTasks.delete(taskId);
+      executeTask(getTask(taskId), query.message, taskId);
     }
   });
 
@@ -226,6 +230,7 @@ function sendTzCard(chatId, tz, taskId, header = '') {
       inline_keyboard: [[
         { text: '✅ Принять', callback_data: `accept:${taskId}` },
         { text: '❌ Отклонить', callback_data: `reject:${taskId}` },
+        { text: '🤖 Отправить ИИ', callback_data: `execute:${taskId}` },
       ]],
     },
   }).then(sent => {
