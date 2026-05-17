@@ -2,14 +2,17 @@
 const express = require('express');
 const { parseTzFromMessage } = require('../agents/claude');
 const { addTask, updateTask, getTask } = require('../taskStore');
-const { recall } = require('../agents/rag');
-const { remember } = require('../agents/rag');
+const { recall, remember } = require('../agents/rag');
 const { checkBanner, checkLetter, addTesterLog, getTesterLog, addTesterSseClient, removeTesterSseClient } = require('../agents/tester');
+const { pipelineStart, pipelineStep, pipelineFinish, getEntries, addClient, removeClient } = require('../agents/pipelineLog');
 const axios = require('axios');
 
 const router = express.Router();
 
-// GET /api/ai/tester-log — лог последних проверок
+// Абсолютный URL для изображений в письмах (email-клиенты не понимают относительные пути)
+const APP_URL = process.env.APP_URL || 'https://vladaiproject123.ru';
+
+// GET /api/ai/tester-log
 router.get('/tester-log', (req, res) => res.json(getTesterLog()));
 
 // GET /api/ai/tester-events — SSE поток логов тестировщика
@@ -22,42 +25,55 @@ router.get('/tester-events', (req, res) => {
   req.on('close', () => removeTesterSseClient(res));
 });
 
+// GET /api/ai/pipeline-log — история pipeline
+router.get('/pipeline-log', (req, res) => res.json(getEntries()));
+
+// GET /api/ai/pipeline-events — SSE поток шагов pipeline
+router.get('/pipeline-events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  addClient(res);
+  req.on('close', () => removeClient(res));
+});
+
 // POST /api/ai/chat — принять сообщение, создать и выполнить задачу
 router.post('/chat', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: 'Нет сообщения' });
 
-  // Парсим ТЗ из сообщения
   const tz = await parseTzFromMessage(message).catch(() => ({
     type: 'task', title: message.slice(0, 50), text: message,
     goal: message, requirements: [], priority: 'normal', deadline: null
   }));
 
-  // Создаём задачу
   const task = addTask({ tz, fromName: 'Главный ИИ', sourceChatTitle: null });
   updateTask(task.id, { status: 'pending' });
 
-  res.json({ ok: true, taskId: task.id, tz });
+  res.json({ ok: true, taskId: task.id, taskNum: task.num, tz });
 
-  // Запускаем pipeline асинхронно
-  _runPipeline(task.id, tz, message).catch(err => {
+  _runPipeline(task.id, task.num, tz, message).catch(err => {
     console.error('[AI] Ошибка pipeline:', err.message);
     updateTask(task.id, { status: 'error', error: err.message });
+    pipelineFinish(task.id, false);
   });
 });
 
-// Полный pipeline: баннер → тест → письмо → тест → Sendsay
-async function _runPipeline(taskId, tz, originalMessage) {
+// ─── Полный pipeline: баннер → тест → письмо → тест → Sendsay ───────────────
+async function _runPipeline(taskId, taskNum, tz, originalMessage) {
   const base = `http://localhost:${process.env.PORT || 3000}`;
-  console.log(`[AI] ▶ Pipeline запущен: задача #${taskId}, тип: ${tz.type}`);
+
+  pipelineStart(taskId, taskNum, tz.type, tz.title || originalMessage.slice(0, 50));
+  pipelineStep(taskId, `Задача принята, тип: ${tz.type}`);
   updateTask(taskId, { status: 'inprog' });
 
-  console.log(`[AI] 🔍 Ищу похожие задачи в памяти...`);
+  pipelineStep(taskId, 'Ищу похожие задачи в памяти...');
   const memories = await recall(tz.text || tz.title || originalMessage, tz.type).catch(err => {
-    console.error('[AI] ⚠️ RAG recall ошибка:', err.message);
+    pipelineStep(taskId, `Память недоступна: ${err.message}`, 'warn');
     return [];
   });
-  console.log(`[AI] 💾 Найдено в памяти: ${memories.length} похожих задач`);
+  pipelineStep(taskId, `В памяти найдено: ${memories.length} похожих задач`);
 
   const memCtx = memories.length
     ? '\n\nПохожие задачи из прошлого:\n' + memories.map((m, i) => `${i+1}. ${m.query} → ${m.result}`).join('\n')
@@ -67,68 +83,68 @@ async function _runPipeline(taskId, tz, originalMessage) {
   let result = {};
 
   if (tz.type === 'banner' || tz.type === 'letter') {
-    console.log(`[AI] 🖼 Шаг 1: генерация баннера...`);
-    const bannerResult = await _runWithTester(
+    pipelineStep(taskId, 'Шаг 1: генерация баннера');
+    const bannerData = await _runWithTester(
       'banner', taskId,
       async (prompt) => {
-        console.log(`[AI] → POST /api/images/generate`);
         const r = await axios.post(`${base}/api/images/generate`, {
           letterText: prompt,
           templateId: tz.template || null,
         });
-        console.log(`[AI] ← Баннер: ${r.data.imageUrl}`);
         return r.data;
       },
       async (data) => checkBanner(data.imageUrl),
-      enriched
+      enriched,
+      pipelineStep
     );
-    result.banner = bannerResult;
-    console.log(`[AI] ✅ Баннер принят: ${bannerResult.imageUrl}`);
+    // Делаем URL абсолютным для email-клиентов
+    const bannerAbsUrl = bannerData.imageUrl.startsWith('/') ? APP_URL + bannerData.imageUrl : bannerData.imageUrl;
+    result.banner = { ...bannerData, imageUrl: bannerAbsUrl };
+    pipelineStep(taskId, `✅ Баннер принят — шаблон: ${bannerData.templateId}, заголовок: ${bannerData.title}`, 'ok');
 
     if (tz.type === 'letter') {
-      console.log(`[AI] 📧 Шаг 2: генерация письма...`);
-      const bannerUrl = bannerResult?.imageUrl || null;
-      const letterResult = await _runWithTester(
+      pipelineStep(taskId, 'Шаг 2: генерация письма');
+      const letterData = await _runWithTester(
         'letter', taskId,
         async (prompt) => {
-          console.log(`[AI] → POST /api/letters/generate (bannerUrl: ${bannerUrl})`);
-          const r = await axios.post(`${base}/api/letters/generate`, { letterText: prompt, bannerUrl });
-          console.log(`[AI] ← Письмо: тема "${r.data.subject}"`);
+          const r = await axios.post(`${base}/api/letters/generate`, { letterText: prompt, bannerUrl: bannerAbsUrl });
           return r.data;
         },
         async (data) => checkLetter(data.html),
-        enriched
+        enriched,
+        pipelineStep
       );
-      console.log(`[AI] ✅ Письмо принято: "${letterResult.subject}"`);
+      pipelineStep(taskId, `✅ Письмо принято — тема: "${letterData.subject}"`, 'ok');
 
-      console.log(`[AI] 📤 Шаг 3: заливаю черновик в Sendsay...`);
+      pipelineStep(taskId, 'Шаг 3: заливаю черновик в Sendsay...');
       const draft = await axios.post(`${base}/api/sendsay/draft`, {
-        subject: letterResult.subject,
-        preheader: letterResult.preheader,
-        html: letterResult.html,
+        subject: letterData.subject,
+        preheader: letterData.preheader,
+        html: letterData.html,
       });
-      result.subject = letterResult.subject;
+      result.subject  = letterData.subject;
       result.draftUrl = draft.data.url;
-      console.log(`[AI] ✅ Черновик создан: ${draft.data.url}`);
+      pipelineStep(taskId, `✅ Черновик создан в Sendsay`, 'ok');
     }
   } else {
-    console.log(`[AI] ℹ️ Тип "${tz.type}" — pipeline не требует генерации`);
+    pipelineStep(taskId, `Тип "${tz.type}" — pipeline не требует генерации`);
   }
 
   updateTask(taskId, { status: 'done', result });
-  console.log(`[AI] 🏁 Pipeline завершён: задача #${taskId}`);
+  pipelineFinish(taskId, true);
+  pipelineStep(taskId, '🏁 Всё готово!', 'ok');
 
   remember({
     taskType: tz.type,
     query: tz.text || tz.title || originalMessage,
     result: JSON.stringify(result),
     metadata: { title: tz.title },
-  }).catch(err => console.error('[AI] ⚠️ RAG remember ошибка:', err.message));
+  }).catch(err => pipelineStep(taskId, `Память: не удалось сохранить — ${err.message}`, 'warn'));
 }
 
-// Универсальный цикл: генерируем → тестируем → повторяем если нужно
-async function _runWithTester(type, taskId, generate, test, basePrompt, maxAttempts = 3) {
-  console.log(`[Tester] Начинаю проверку: ${type}, макс. ${maxAttempts} попыток`);
+// ─── Универсальный цикл: генерируем → тестируем → повторяем если нужно ───────
+async function _runWithTester(type, taskId, generate, test, basePrompt, log, maxAttempts = 3) {
+  const typeName = type === 'banner' ? 'баннер' : 'письмо';
   let lastIssues = [];
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -136,27 +152,34 @@ async function _runWithTester(type, taskId, generate, test, basePrompt, maxAttem
       ? `${basePrompt}\n\nИСПРАВЬ: ${lastIssues.join('; ')}`
       : basePrompt;
 
+    log(taskId, `${typeName}: генерация (попытка ${attempt}/${maxAttempts})...`);
     const data = await generate(prompt);
 
+    const info = type === 'banner'
+      ? `шаблон: ${data.templateId}, "${data.title}"`
+      : `тема: "${data.subject}"`;
+    log(taskId, `${typeName} сгенерирован — ${info}`);
+    log(taskId, `отправляю ${typeName} тестировщику...`);
+
     addTesterLog({ type, taskId, attempt, status: 'checking', data: type === 'banner' ? data.imageUrl : data.subject });
-    console.log(`[Tester] Проверяю ${type} попытка ${attempt}...`);
 
     const check = await test(data).catch(err => {
-      console.error(`[Tester] Ошибка проверки ${type}:`, err.message);
+      log(taskId, `Ошибка проверки ${typeName}: ${err.message}`, 'warn');
       return { ok: true };
     });
 
     addTesterLog({ type, taskId, attempt, status: check.ok ? 'ok' : 'fail', issues: check.issues || [] });
 
     if (check.ok) {
-      console.log(`[Tester] ✅ ${type} попытка ${attempt}: принято`);
+      log(taskId, `тестировщик принял ${typeName} ✅`, 'ok');
       return data;
     }
-    console.log(`[Tester] ❌ ${type} попытка ${attempt}: отклонено — ${(check.issues || []).join('; ')}`);
+    const issuesText = (check.issues || []).join('; ');
+    log(taskId, `тестировщик отклонил ${typeName}: ${issuesText}`, 'error');
     lastIssues = check.issues || [];
   }
 
-  console.log(`[Tester] ⚠️ ${type}: исчерпаны попытки, возвращаю последний результат`);
+  log(taskId, `исчерпаны попытки — беру последний вариант ${typeName}`, 'warn');
   addTesterLog({ type, taskId, attempt: maxAttempts, status: 'forced', issues: ['Исчерпаны попытки'] });
   return await generate(basePrompt);
 }

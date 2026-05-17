@@ -283,6 +283,51 @@ html,body{height:100%;overflow:hidden}
 .wip-banner{background:rgba(255,140,66,0.08);border:0.5px solid rgba(255,140,66,0.25);border-radius:var(--r8);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--orange)}
 .wip-badge{font-size:9px;font-weight:600;background:rgba(255,140,66,0.12);color:var(--orange);border:0.5px solid rgba(255,140,66,0.3);border-radius:20px;padding:1px 7px;margin-left:6px;vertical-align:middle;white-space:nowrap}
 
+/* ── Pipeline log (AI tab) ──────────────────────────────────────── */
+.pipeline-wrap{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;max-height:480px;overflow-y:auto}
+.pipeline-task{background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:var(--r12);overflow:hidden}
+.pipeline-header{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;user-select:none;transition:background .12s}
+.pipeline-header:hover{background:var(--bg3)}
+.pipeline-num{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.pn-banner{background:rgba(96,165,250,0.12);color:var(--blue);border:0.5px solid rgba(96,165,250,0.25)}
+.pn-letter{background:rgba(200,255,87,0.1);color:var(--acc);border:0.5px solid rgba(200,255,87,0.25)}
+.pn-article{background:rgba(167,139,250,0.12);color:var(--purple);border:0.5px solid rgba(167,139,250,0.25)}
+.pn-task{background:var(--bg4);color:var(--txt2);border:0.5px solid var(--bdr2)}
+.pipeline-title{font-size:12.5px;color:var(--txt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pipeline-ts{font-size:10px;color:var(--txt3);flex-shrink:0}
+.pipeline-status{font-size:11px;flex-shrink:0}
+.pipeline-chevron{font-size:13px;color:var(--txt3);transition:transform .2s;flex-shrink:0}
+.pipeline-chevron.open{transform:rotate(180deg)}
+.pipeline-steps{padding:0 14px 12px;border-top:0.5px solid var(--bdr);background:var(--bg3)}
+.pipeline-step{display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:11.5px;border-bottom:0.5px solid var(--bdr);line-height:1.4}
+.pipeline-step:last-child{border:none}
+.ps-ts{font-size:10px;color:var(--txt3);white-space:nowrap;flex-shrink:0;padding-top:1px}
+.ps-msg{color:var(--txt2);flex:1;word-break:break-word}
+.ps-msg.ok{color:var(--green)}
+.ps-msg.error{color:var(--red)}
+.ps-msg.warn{color:var(--orange)}
+
+/* ── Tester tab redesign ─────────────────────────────────────────── */
+.tester-wrap{display:flex;flex-direction:column;gap:10px}
+.tester-task{background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:var(--r12);overflow:hidden}
+.tester-task-header{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg3)}
+.tester-task-num{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.tester-task-title{font-size:12px;color:var(--txt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tester-task-ts{font-size:10px;color:var(--txt3);flex-shrink:0}
+.tester-checks{padding:10px 14px;display:flex;flex-direction:column;gap:8px}
+.tester-check{background:var(--bg3);border-radius:var(--r8);padding:10px 12px;border:0.5px solid var(--bdr)}
+.tester-check-header{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px}
+.tch-type{font-weight:500;color:var(--txt)}
+.tch-attempt{font-size:10px;color:var(--txt3)}
+.tch-result{margin-left:auto;font-size:11.5px;font-weight:500}
+.tch-result.ok{color:var(--green)}
+.tch-result.fail{color:var(--red)}
+.tch-result.forced{color:var(--orange)}
+.tch-result.checking{color:var(--txt3)}
+.tester-issues{margin-top:6px;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px}
+.tester-issues li{font-size:11px;color:var(--red);display:flex;gap:6px;align-items:flex-start}
+.tester-issues li::before{content:'•';flex-shrink:0}
+
 /* Log lines (articles progress) */
 .log-wrap{background:var(--bg3);border-radius:var(--r8);padding:10px 12px;font-family:var(--font-mono);font-size:11px;margin-bottom:12px}
 .log-line{color:var(--txt2);padding:2px 0;display:flex;align-items:center;gap:7px}
@@ -556,17 +601,17 @@ html,body{height:100%;overflow:hidden}
           <div><div class="agent-name">Главный ИИ</div><div class="agent-model">Инициализирует задачи, координирует агентов</div></div>
           <div class="agent-status-pill"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>онлайн</div>
         </div>
-        <div class="chat-toolbar">
-          <button class="btn" onclick="aiClearChat()"><i class="ti ti-trash" style="font-size:12px"></i>Очистить</button>
-        </div>
-        <div class="chat-wrap" id="ai-chat-wrap" style="min-height:200px;max-height:420px;overflow-y:auto"></div>
-        <div class="chat-input-row">
+        <div class="chat-input-row" style="margin-bottom:14px">
           <textarea class="form-textarea" id="ai-input" rows="2" placeholder="Опишите задачу — баннер, письмо, статья…" style="flex:1"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend()}"></textarea>
-          <button class="btn btn-primary" onclick="aiSend()" style="padding:0 16px;align-self:stretch">
+          <button class="btn btn-primary" id="ai-send-btn" onclick="aiSend()" style="padding:0 16px;align-self:stretch">
             <i class="ti ti-send" style="font-size:16px"></i>
           </button>
         </div>
+        <div id="pipeline-empty" style="font-size:12px;color:var(--txt3);text-align:center;padding:32px 0">
+          Задач пока нет — введите задачу выше или отправьте через Telegram
+        </div>
+        <div class="pipeline-wrap" id="pipeline-wrap"></div>
       </div>
 
       <!-- ══════════════════════════════════════════════
@@ -575,12 +620,13 @@ html,body{height:100%;overflow:hidden}
       <div class="tab-panel" id="tab-tester">
         <div class="agent-card">
           <div class="agent-avi" style="background:rgba(167,139,250,0.12)"><i class="ti ti-flask" style="font-size:20px;color:var(--purple)"></i></div>
-          <div><div class="agent-name">Тестировщик</div><div class="agent-model">Работает автоматически — проверяет баннеры и письма</div></div>
+          <div><div class="agent-name">Тестировщик</div><div class="agent-model">GPT-4o Vision — проверяет баннеры и письма автоматически</div></div>
           <div class="agent-status-pill"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>онлайн</div>
         </div>
-        <div id="tester-log-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
-          <div style="font-size:12px;color:var(--txt3);text-align:center;padding:32px 0">Проверок пока нет — запусти задачу через Главный ИИ</div>
+        <div id="tester-empty" style="font-size:12px;color:var(--txt3);text-align:center;padding:32px 0">
+          Проверок пока нет — запусти задачу через Главный ИИ
         </div>
+        <div class="tester-wrap" id="tester-wrap"></div>
       </div>
 
       <!-- ══════════════════════════════════════════════
@@ -724,6 +770,7 @@ html,body{height:100%;overflow:hidden}
     if (id === 'history')  loadHistory();
     if (id === 'settings') loadAppSettings();
     if (id === 'tester')   loadTesterLog();
+    if (id === 'ai')       loadPipelineLog();
     if (window.innerWidth <= 768) closeSidebar();
   }
 
@@ -1004,36 +1051,122 @@ html,body{height:100%;overflow:hidden}
   window.pushUnsubscribe = pushUnsubscribe;
   window.pushTest        = pushTest;
 
-  // ── Главный ИИ ────────────────────────────────────────────────────
-  var aiMessages = [];
+  // ── Главный ИИ — Pipeline log ─────────────────────────────────────
+  var pipelineMap = {}; // taskId -> DOM element
 
-  function aiAddMessage(role, html) {
-    var wrap = document.getElementById('ai-chat-wrap');
+  function ptNumClass(type) {
+    return 'pipeline-num pn-' + (type || 'task');
+  }
+  function ptTypeLabel(type) {
+    return { banner:'Баннер', letter:'Письмо', article:'Статья', task:'Задача' }[type] || 'Задача';
+  }
+  function ptStatusIcon(status) {
+    if (status === 'done')    return '<span style="color:var(--green)">✅</span>';
+    if (status === 'error')   return '<span style="color:var(--red)">❌</span>';
+    return '<span class="ti ti-loader-2 spin" style="font-size:12px;color:var(--txt3)"></span>';
+  }
+
+  function pipelineCreateEntry(data) {
+    var empty = document.getElementById('pipeline-empty');
+    if (empty) empty.style.display = 'none';
+
+    var wrap = document.getElementById('pipeline-wrap');
     if (!wrap) return;
+
     var div = document.createElement('div');
-    div.className = role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai';
-    if (role === 'ai') {
-      div.innerHTML = '<div style="font-size:11px;color:var(--txt3);margin-bottom:6px;display:flex;align-items:center;gap:5px"><i class="ti ti-brain" style="font-size:12px;color:var(--acc)"></i>Главный ИИ</div>' + html;
-    } else {
-      div.textContent = html;
-    }
-    wrap.appendChild(div);
-    wrap.scrollTop = wrap.scrollHeight;
+    div.className = 'pipeline-task';
+    div.id = 'pt-' + data.taskId;
+    div.innerHTML =
+      '<div class="pipeline-header" onclick="togglePt(\'' + data.taskId + '\')">' +
+        '<span class="' + ptNumClass(data.type) + '">#' + (data.taskNum || '?') + ' — ' + ptTypeLabel(data.type) + '</span>' +
+        '<span class="pipeline-title">' + esc(data.title || '') + '</span>' +
+        '<span class="pipeline-ts">' + (data.ts || '') + '</span>' +
+        '<span class="pipeline-status" id="pt-st-' + data.taskId + '">' + ptStatusIcon('running') + '</span>' +
+        '<i class="ti ti-chevron-down pipeline-chevron open" id="pt-ch-' + data.taskId + '"></i>' +
+      '</div>' +
+      '<div class="pipeline-steps" id="pt-steps-' + data.taskId + '"></div>';
+
+    wrap.insertBefore(div, wrap.firstChild);
+    pipelineMap[data.taskId] = div;
   }
 
-  function aiClearChat() {
-    var wrap = document.getElementById('ai-chat-wrap');
-    if (wrap) wrap.innerHTML = '';
-    aiMessages = [];
+  function pipelineAddStep(taskId, step) {
+    var stepsEl = document.getElementById('pt-steps-' + taskId);
+    if (!stepsEl) return;
+    var div = document.createElement('div');
+    div.className = 'pipeline-step';
+    div.innerHTML =
+      '<span class="ps-ts">' + (step.ts || '') + '</span>' +
+      '<span class="ps-msg ' + (step.level || '') + '">' + esc(step.msg || '') + '</span>';
+    stepsEl.appendChild(div);
+    stepsEl.scrollTop = stepsEl.scrollHeight;
   }
+
+  function pipelineSetFinish(taskId, ok) {
+    var st = document.getElementById('pt-st-' + taskId);
+    if (st) st.innerHTML = ptStatusIcon(ok ? 'done' : 'error');
+  }
+
+  window.togglePt = function(taskId) {
+    var steps = document.getElementById('pt-steps-' + taskId);
+    var chevron = document.getElementById('pt-ch-' + taskId);
+    if (!steps) return;
+    var open = steps.style.display !== 'none';
+    steps.style.display = open ? 'none' : 'block';
+    if (chevron) chevron.classList.toggle('open', !open);
+  };
+
+  // SSE поток pipeline
+  if (window.EventSource) {
+    var pipelineEvt = new EventSource('/api/ai/pipeline-events');
+    pipelineEvt.onmessage = function(e) {
+      try {
+        var d = JSON.parse(e.data);
+        if (d.event === 'start')  pipelineCreateEntry(d);
+        if (d.event === 'step')   pipelineAddStep(d.taskId, d.step);
+        if (d.event === 'finish') pipelineSetFinish(d.taskId, d.ok);
+      } catch(_) {}
+    };
+  }
+
+  // Загружаем историю pipeline при открытии вкладки
+  function loadPipelineLog() {
+    fetch('/api/ai/pipeline-log').then(function(r) { return r.json(); }).then(function(entries) {
+      var wrap = document.getElementById('pipeline-wrap');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      pipelineMap = {};
+      if (entries.length === 0) {
+        var empty = document.getElementById('pipeline-empty');
+        if (empty) empty.style.display = '';
+        return;
+      }
+      var empty = document.getElementById('pipeline-empty');
+      if (empty) empty.style.display = 'none';
+      // Рисуем в обратном порядке (oldest first, insert at front → newest on top)
+      entries.slice().reverse().forEach(function(entry) {
+        pipelineCreateEntry(entry);
+        (entry.steps || []).forEach(function(step) { pipelineAddStep(entry.taskId, step); });
+        pipelineSetFinish(entry.taskId, entry.status === 'done' ? true : entry.status === 'error' ? false : null);
+        // Свернуть завершённые задачи
+        if (entry.status === 'done' || entry.status === 'error') {
+          var stepsEl = document.getElementById('pt-steps-' + entry.taskId);
+          var chevron = document.getElementById('pt-ch-' + entry.taskId);
+          if (stepsEl) stepsEl.style.display = 'none';
+          if (chevron) chevron.classList.remove('open');
+        }
+      });
+    }).catch(function(){});
+  }
+  window.loadPipelineLog = loadPipelineLog;
 
   function aiSend() {
     var input = document.getElementById('ai-input');
+    var btn = document.getElementById('ai-send-btn');
     var msg = (input.value || '').trim();
     if (!msg) return;
     input.value = '';
-    aiAddMessage('user', msg);
-    aiAddMessage('ai', '<span style="color:var(--txt3)">Анализирую задачу...</span>');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner" style="border-top-color:#0F1117"></span>'; }
 
     fetch('/api/ai/chat', {
       method: 'POST',
@@ -1042,88 +1175,117 @@ html,body{height:100%;overflow:hidden}
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
-      var wrap = document.getElementById('ai-chat-wrap');
-      var last = wrap.lastElementChild;
-      var typeLabel = { banner: 'Баннер', letter: 'Письмо', article: 'Статья', task: 'Задача' }[d.tz && d.tz.type] || 'Задача';
-      if (last) last.innerHTML =
-        '<div style="font-size:11px;color:var(--txt3);margin-bottom:6px;display:flex;align-items:center;gap:5px"><i class="ti ti-brain" style="font-size:12px;color:var(--acc)"></i>Главный ИИ</div>' +
-        '<div style="margin-bottom:8px">Принял задачу, запускаю pipeline...</div>' +
-        '<div style="background:var(--bg3);border-radius:var(--r8);padding:10px;font-size:12px;border:0.5px solid var(--bdr2)">' +
-          '<div style="font-weight:500;color:var(--acc);margin-bottom:6px;font-size:11px">Задача #' + d.taskId + '</div>' +
-          '<div class="tz-row"><span class="tz-key">Тип:</span><span class="tz-val">' + typeLabel + '</span></div>' +
-          '<div class="tz-row"><span class="tz-key">Название:</span><span class="tz-val">' + (d.tz && d.tz.title || '—') + '</span></div>' +
-          '<div class="tz-row" id="ai-task-status-' + d.taskId + '"><span class="tz-key">Статус:</span><span class="tz-val" style="color:var(--orange)">выполняется...</span></div>' +
-        '</div>';
-      // Следим за статусом задачи через SSE
-      aiWatchTask(d.taskId);
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send" style="font-size:16px"></i>'; }
+      // Pipeline entry will arrive via SSE
     })
-    .catch(function(err) { aiAddMessage('ai', '❌ Ошибка: ' + err.message); });
+    .catch(function(err) {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send" style="font-size:16px"></i>'; }
+      showToast('Ошибка: ' + err.message);
+    });
   }
-
-  function aiWatchTask(taskId) {
-    // Опрашиваем статус задачи каждые 3 сек
-    var interval = setInterval(function() {
-      fetch('/api/tasks/' + taskId)
-        .then(function(r) { return r.json(); })
-        .then(function(task) {
-          var el = document.getElementById('ai-task-status-' + taskId);
-          if (!el) { clearInterval(interval); return; }
-          var statusMap = { pending: 'в очереди', inprog: 'выполняется...', done: '✅ готово', error: '❌ ошибка', analyzing: 'анализирую...' };
-          var color = task.status === 'done' ? 'var(--green)' : task.status === 'error' ? 'var(--red)' : 'var(--orange)';
-          el.innerHTML = '<span class="tz-key">Статус:</span><span class="tz-val" style="color:' + color + '">' + (statusMap[task.status] || task.status) + '</span>';
-          if (task.status === 'done' || task.status === 'error') {
-            clearInterval(interval);
-            if (task.status === 'done' && task.result && task.result.draftUrl) {
-              el.insertAdjacentHTML('afterend', '<div class="tz-row"><span class="tz-key">Черновик:</span><a href="' + task.result.draftUrl + '" target="_blank" class="tz-val" style="color:var(--acc)">Открыть в Sendsay</a></div>');
-            }
-          }
-        }).catch(function() { clearInterval(interval); });
-    }, 3000);
-  }
-
   window.aiSend = aiSend;
-  window.aiClearChat = aiClearChat;
 
-  // ── Тестировщик — лог проверок ────────────────────────────────────
-  function testerAddLog(entry) {
-    var wrap = document.getElementById('tester-log-wrap');
-    if (!wrap) return;
-    // Убираем заглушку если есть
-    if (wrap.children.length === 1 && wrap.children[0].tagName !== 'DIV'.toUpperCase()) return;
-    var empty = wrap.querySelector('[style*="Проверок пока нет"]');
-    if (empty) empty.remove();
+  // ── Тестировщик — лог проверок сгруппированный по задачам ────────
+  var testerTaskMap = {}; // taskId -> DOM element
 
-    var icons = { checking: '🔍', ok: '✅', fail: '❌', forced: '⚠️' };
-    var colors = { ok: 'var(--green)', fail: 'var(--red)', forced: 'var(--orange)', checking: 'var(--txt2)' };
-    var typeLabel = entry.type === 'banner' ? 'Баннер' : 'Письмо';
+  function testerGetOrCreateTask(entry) {
+    var taskId = entry.taskId || 'unknown';
+    if (testerTaskMap[taskId]) return testerTaskMap[taskId];
+
+    var empty = document.getElementById('tester-empty');
+    if (empty) empty.style.display = 'none';
+
+    var wrap = document.getElementById('tester-wrap');
+    if (!wrap) return null;
+
+    var taskNum = '#' + (entry.taskNum || '?');
+    var taskType = entry.taskType || entry.type || 'task';
+    var typeLabel = { banner:'Баннер', letter:'Письмо', article:'Статья', task:'Задача' }[taskType] || 'Задача';
+    var numCls = 'tester-task-num pn-' + taskType;
 
     var div = document.createElement('div');
-    div.className = 'qa-report';
+    div.className = 'tester-task';
+    div.id = 'tt-' + taskId;
     div.innerHTML =
-      '<div class="qa-report-title">' + icons[entry.status] + ' ' + typeLabel + ' · попытка ' + entry.attempt + ' · ' + (entry.ts || '') + '</div>' +
-      (entry.status === 'ok'
-        ? '<div class="qa-row ok"><i class="ti ti-check" style="font-size:13px"></i>Проверка пройдена</div>'
-        : entry.status === 'checking'
-          ? '<div class="qa-row" style="color:var(--txt2)"><i class="ti ti-loader" style="font-size:13px"></i>Проверяю...</div>'
-          : (entry.issues || []).map(function(iss) {
-              return '<div class="qa-row warn-qa"><i class="ti ti-alert-triangle" style="font-size:13px"></i>' + iss + '</div>';
-            }).join('') || '<div class="qa-row warn-qa">Неизвестная ошибка</div>'
-      );
+      '<div class="tester-task-header">' +
+        '<span class="' + numCls + '">' + taskNum + ' — ' + typeLabel + '</span>' +
+        '<span class="tester-task-title">' + esc(entry.taskTitle || '') + '</span>' +
+        '<span class="tester-task-ts">' + (entry.ts || '') + '</span>' +
+      '</div>' +
+      '<div class="tester-checks" id="ttc-' + taskId + '"></div>';
+
     wrap.insertBefore(div, wrap.firstChild);
+    testerTaskMap[taskId] = div;
+    return div;
+  }
+
+  function testerAddCheck(entry) {
+    testerGetOrCreateTask(entry);
+    var taskId = entry.taskId || 'unknown';
+    var checksEl = document.getElementById('ttc-' + taskId);
+    if (!checksEl) return;
+
+    var typeIcon = entry.type === 'banner' ? '🖼' : '📧';
+    var typeLabel = entry.type === 'banner' ? 'Баннер' : 'Письмо';
+
+    var resultHtml, resultCls;
+    if (entry.status === 'checking') {
+      resultCls = 'checking'; resultHtml = '🔍 Проверяю...';
+    } else if (entry.status === 'ok') {
+      resultCls = 'ok'; resultHtml = '✅ Принят';
+    } else if (entry.status === 'forced') {
+      resultCls = 'forced'; resultHtml = '⚠️ Принудительно';
+    } else {
+      resultCls = 'fail'; resultHtml = '❌ Отклонён';
+    }
+
+    var issuesHtml = '';
+    if (entry.issues && entry.issues.length) {
+      issuesHtml = '<ul class="tester-issues">' +
+        entry.issues.map(function(i) { return '<li>' + esc(i) + '</li>'; }).join('') +
+        '</ul>';
+    }
+
+    // Ищем уже существующий checking-блок для этой попытки — заменяем его
+    var existId = 'tck-' + taskId + '-' + entry.type + '-' + entry.attempt;
+    var existing = document.getElementById(existId);
+    if (existing) {
+      existing.remove();
+    }
+
+    var div = document.createElement('div');
+    div.className = 'tester-check';
+    div.id = existId;
+    div.innerHTML =
+      '<div class="tester-check-header">' +
+        '<span class="tch-type">' + typeIcon + ' ' + typeLabel + '</span>' +
+        '<span class="tch-attempt">попытка ' + entry.attempt + '</span>' +
+        '<span class="tch-result ' + resultCls + '">' + resultHtml + '</span>' +
+      '</div>' +
+      issuesHtml;
+
+    checksEl.appendChild(div);
   }
 
   // SSE поток от тестировщика
   if (window.EventSource) {
     var testerEvt = new EventSource('/api/ai/tester-events');
     testerEvt.onmessage = function(e) {
-      try { testerAddLog(JSON.parse(e.data)); } catch(_) {}
+      try { testerAddCheck(JSON.parse(e.data)); } catch(_) {}
     };
   }
 
   // Загружаем существующий лог при открытии вкладки
   function loadTesterLog() {
+    var wrap = document.getElementById('tester-wrap');
+    if (wrap) wrap.innerHTML = '';
+    testerTaskMap = {};
+    var empty = document.getElementById('tester-empty');
+    if (empty) empty.style.display = '';
+
     fetch('/api/ai/tester-log').then(function(r) { return r.json(); }).then(function(logs) {
-      logs.slice(0, 20).reverse().forEach(testerAddLog);
+      // Сортируем по времени (старые сначала) и добавляем
+      logs.slice().reverse().forEach(testerAddCheck);
     }).catch(function(){});
   }
   window.loadTesterLog = loadTesterLog;

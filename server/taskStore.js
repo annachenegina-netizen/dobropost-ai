@@ -7,6 +7,7 @@ const db = new Database(path.join(__dirname, '..', 'tasks.db'));
 db.exec(`
   CREATE TABLE IF NOT EXISTS tasks (
     id          TEXT PRIMARY KEY,
+    num         INTEGER,
     tz          TEXT,
     fromName    TEXT DEFAULT '?',
     sourceChatTitle TEXT,
@@ -25,6 +26,9 @@ db.exec(`
     createdAt   INTEGER
   );
 `);
+
+// Миграция: добавляем num если его нет
+try { db.exec('ALTER TABLE tasks ADD COLUMN num INTEGER'); } catch (_) {}
 
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
@@ -45,9 +49,15 @@ function rowToTask(row) {
   };
 }
 
+function _nextNum() {
+  const row = db.prepare('SELECT MAX(num) as m FROM tasks').get();
+  return (row?.m || 0) + 1;
+}
+
 function addTask({ tz, fromName, sourceChatTitle, telegramChatId, telegramMsgId }) {
   const task = {
     id: Date.now().toString(),
+    num: _nextNum(),
     tz,
     fromName: fromName || '?',
     sourceChatTitle: sourceChatTitle || null,
@@ -63,11 +73,11 @@ function addTask({ tz, fromName, sourceChatTitle, telegramChatId, telegramMsgId 
 
   db.prepare(`
     INSERT INTO tasks
-      (id, tz, fromName, sourceChatTitle, telegramChatId, telegramMsgId,
+      (id, num, tz, fromName, sourceChatTitle, telegramChatId, telegramMsgId,
        status, error, result, priority, deadline, createdAt)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
   `).run(
-    task.id, JSON.stringify(task.tz), task.fromName,
+    task.id, task.num, JSON.stringify(task.tz), task.fromName,
     task.sourceChatTitle, task.telegramChatId, task.telegramMsgId,
     task.status, task.error, null, task.priority, task.deadline, task.createdAt
   );

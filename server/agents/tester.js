@@ -3,6 +3,7 @@ const OpenAI = require('openai');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
+const { getTask } = require('../taskStore');
 
 const getClient = () => new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -102,7 +103,14 @@ const testerLog = [];
 const testerSseClients = [];
 
 function addTesterLog(entry) {
-  const record = { ...entry, ts: new Date().toLocaleTimeString('ru') };
+  const task = entry.taskId ? getTask(entry.taskId) : null;
+  const record = {
+    ...entry,
+    ts: new Date().toLocaleTimeString('ru'),
+    taskNum:   task?.num   || null,
+    taskTitle: task?.tz?.title || null,
+    taskType:  task?.tz?.type  || entry.type,
+  };
   testerLog.unshift(record);
   if (testerLog.length > 100) testerLog.pop();
   testerSseClients.forEach(res => {
