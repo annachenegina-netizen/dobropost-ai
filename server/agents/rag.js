@@ -3,9 +3,14 @@ const { createClient } = require('@supabase/supabase-js');
 const OpenAI = require('openai');
 require('dotenv').config();
 
+// ws нужен для Supabase на Node.js < 22
+let ws;
+try { ws = require('ws'); } catch (_) {}
+
 const getSupabase = () => createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY,
+  ws ? { realtime: { transport: ws } } : {}
 );
 
 const getOpenAI = () => new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

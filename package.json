@@ -21,7 +21,8 @@
     "nodemailer": "^6.9.0",
     "openai": "^6.37.0",
     "puppeteer": "^24.43.1",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",
