@@ -481,8 +481,8 @@ ${templateList}
 Верни ТОЛЬКО JSON без пояснений и markdown-блоков.`;
 
   try {
-    const response = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const response = await getClient().chat.completions.create({
+      model: process.env.MODEL_MAIN || 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
       max_tokens: 600,

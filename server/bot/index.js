@@ -240,16 +240,23 @@ function sendTzCard(chatId, tz, taskId, header = '') {
 }
 
 // ─── Форматирование ТЗ в текст ───────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function formatTz(tz) {
   if (!tz) return '(нет данных)';
   const emoji = { banner: '🖼', letter: '📧', article: '📝' }[tz.type] || '📋';
   const name  = { banner: 'Баннер', letter: 'Письмо', article: 'Статья' }[tz.type] || 'Задача';
 
-  const lines = [`${emoji} <b>${name}</b>`];
-  if (tz.title)    lines.push(`📌 ${tz.title}`);
-  if (tz.template) lines.push(`🎨 Шаблон: <code>${tz.template}</code>`);
-  if (tz.subtitle) lines.push(`💬 ${tz.subtitle}`);
-  if (tz.text)     lines.push(`\n<i>${tz.text.slice(0, 250)}${tz.text.length > 250 ? '…' : ''}</i>`);
+  const lines = [`${emoji} <b>${escHtml(name)}</b>`];
+  if (tz.title)    lines.push(`📌 ${escHtml(tz.title)}`);
+  if (tz.template) lines.push(`🎨 Шаблон: <code>${escHtml(tz.template)}</code>`);
+  if (tz.subtitle) lines.push(`💬 ${escHtml(tz.subtitle)}`);
+  if (tz.text) {
+    const t = tz.text.slice(0, 250);
+    lines.push(`\n<i>${escHtml(t)}${tz.text.length > 250 ? '…' : ''}</i>`);
+  }
 
   return lines.join('\n');
 }
