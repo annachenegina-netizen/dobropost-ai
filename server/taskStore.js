@@ -155,18 +155,22 @@ function removePushSubscription(endpoint) {
 }
 
 function sendPush(title, body, url) {
-  if (!process.env.VAPID_PUBLIC_KEY) return;
+  if (!process.env.VAPID_PUBLIC_KEY) { console.log('[Push] Нет VAPID ключа, пропуск'); return; }
   const subs = db.prepare('SELECT sub FROM push_subscriptions').all();
+  console.log(`[Push] Отправляю "${title}" → ${subs.length} подписчиков`);
   const payload = JSON.stringify({ title, body, url: url || '/', tag: 'dobropost-task' });
   subs.forEach(row => {
-    try {
-      webpush.sendNotification(JSON.parse(row.sub), payload).catch(err => {
+    const sub = JSON.parse(row.sub);
+    const shortEndpoint = sub.endpoint.slice(0, 40) + '...';
+    webpush.sendNotification(sub, payload)
+      .then(() => console.log(`[Push] ✅ Доставлено: ${shortEndpoint}`))
+      .catch(err => {
+        console.log(`[Push] ❌ Ошибка ${err.statusCode}: ${shortEndpoint} — ${err.message}`);
         if (err.statusCode === 410 || err.statusCode === 404) {
-          db.prepare('DELETE FROM push_subscriptions WHERE sub LIKE ?')
-            .run('%' + JSON.parse(row.sub).endpoint + '%');
+          db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(sub.endpoint);
+          console.log(`[Push] 🗑 Удалена протухшая подписка`);
         }
       });
-    } catch (_) {}
   });
 }
 
