@@ -3,6 +3,7 @@ const express = require('express');
 const axios = require('axios');
 const { getTasks, getTask, updateTask, removeTask, addSseClient, getHistory, sendPush } = require('../taskStore');
 const { remember, recall } = require('../agents/rag');
+const { checkBanner, checkLetter } = require('../agents/tester');
 
 const router = express.Router();
 
@@ -20,6 +21,13 @@ router.get('/events', (req, res) => {
 
 // GET /api/tasks — список всех задач
 router.get('/', (req, res) => res.json(getTasks()));
+
+// GET /api/tasks/:id — одна задача по ID
+router.get('/:id', (req, res) => {
+  const task = getTask(req.params.id);
+  if (!task) return res.status(404).json({ error: 'Не найдена' });
+  res.json(task);
+});
 
 // GET /api/tasks/history — завершённые задачи с фильтрами
 router.get('/history', (req, res) => {
@@ -91,26 +99,78 @@ async function executeTask(task) {
   const enrichedText = query + memoryContext;
 
   if (tz.type === 'banner') {
-    const resp = await axios.post(`${base}/api/images/generate`, {
-      letterText: enrichedText,
-      templateId: tz.template || null,
-    });
-    return { imageUrl: resp.data.imageUrl, title: resp.data.title, templateId: resp.data.templateId };
+    return await _executeBannerWithReview(base, enrichedText, tz.template || null);
   }
 
   if (tz.type === 'letter') {
-    const gen = await axios.post(`${base}/api/letters/generate`, {
-      letterText: enrichedText,
-    });
-    await axios.post(`${base}/api/sendsay/draft`, {
-      subject: gen.data.subject,
-      preheader: gen.data.preheader,
-      html: gen.data.html,
-    });
-    return { subject: gen.data.subject };
+    return await _executeLetterWithReview(base, enrichedText);
   }
 
   return {};
+}
+
+// Генерирует баннер и проверяет тестировщиком (макс. 3 попытки)
+async function _executeBannerWithReview(base, letterText, templateId) {
+  const MAX = 3;
+  let lastIssues = [];
+
+  for (let attempt = 1; attempt <= MAX; attempt++) {
+    const prompt = lastIssues.length
+      ? `${letterText}\n\nПредыдущая попытка была отклонена тестировщиком. Исправь: ${lastIssues.join('; ')}`
+      : letterText;
+
+    const resp = await axios.post(`${base}/api/images/generate`, { letterText: prompt, templateId });
+    console.log(`[Tester] Баннер попытка ${attempt}: ${resp.data.imageUrl}`);
+
+    const check = await checkBanner(resp.data.imageUrl).catch(() => ({ ok: true }));
+    console.log(`[Tester] Баннер результат:`, check);
+
+    if (check.ok) {
+      return { imageUrl: resp.data.imageUrl, title: resp.data.title, templateId: resp.data.templateId };
+    }
+    lastIssues = check.issues || [];
+  }
+
+  // После 3 попыток — возвращаем последний результат
+  const final = await axios.post(`${base}/api/images/generate`, { letterText, templateId });
+  return { imageUrl: final.data.imageUrl, title: final.data.title, templateId: final.data.templateId };
+}
+
+// Верстает письмо и проверяет тестировщиком (макс. 3 попытки)
+async function _executeLetterWithReview(base, letterText) {
+  const MAX = 3;
+  let lastIssues = [];
+
+  for (let attempt = 1; attempt <= MAX; attempt++) {
+    const prompt = lastIssues.length
+      ? `${letterText}\n\nПредыдущая версия письма была отклонена тестировщиком. Исправь: ${lastIssues.join('; ')}`
+      : letterText;
+
+    const gen = await axios.post(`${base}/api/letters/generate`, { letterText: prompt });
+    console.log(`[Tester] Письмо попытка ${attempt}`);
+
+    const check = await checkLetter(gen.data.html).catch(() => ({ ok: true }));
+    console.log(`[Tester] Письмо результат:`, check);
+
+    if (check.ok) {
+      const draft = await axios.post(`${base}/api/sendsay/draft`, {
+        subject: gen.data.subject,
+        preheader: gen.data.preheader,
+        html: gen.data.html,
+      });
+      return { subject: gen.data.subject, draftUrl: draft.data.url };
+    }
+    lastIssues = check.issues || [];
+  }
+
+  // После 3 попыток — заливаем последнюю версию
+  const final = await axios.post(`${base}/api/letters/generate`, { letterText });
+  const draft = await axios.post(`${base}/api/sendsay/draft`, {
+    subject: final.data.subject,
+    preheader: final.data.preheader,
+    html: final.data.html,
+  });
+  return { subject: final.data.subject, draftUrl: draft.data.url };
 }
 
 module.exports = router;

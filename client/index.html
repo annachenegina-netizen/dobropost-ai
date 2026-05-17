@@ -551,32 +551,21 @@ html,body{height:100%;overflow:hidden}
            TAB: ГЛАВНЫЙ ИИ
       ══════════════════════════════════════════════ -->
       <div class="tab-panel" id="tab-ai">
-        <div class="wip-banner"><i class="ti ti-tool" style="font-size:14px;flex-shrink:0"></i>Чат с Главным ИИ пока не подключён к бэкенду — это макет интерфейса.</div>
         <div class="agent-card">
           <div class="agent-avi"><i class="ti ti-brain" style="font-size:20px;color:var(--acc)"></i></div>
-          <div><div class="agent-name">Главный ИИ</div><div class="agent-model">gpt-4o · Инициализирует задачи, координирует агентов</div></div>
+          <div><div class="agent-name">Главный ИИ</div><div class="agent-model">Инициализирует задачи, координирует агентов</div></div>
           <div class="agent-status-pill"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>онлайн</div>
         </div>
         <div class="chat-toolbar">
-          <button class="btn"><i class="ti ti-trash" style="font-size:12px"></i>Очистить контекст</button>
-          <button class="btn"><i class="ti ti-download" style="font-size:12px"></i>Экспорт диалога</button>
+          <button class="btn" onclick="aiClearChat()"><i class="ti ti-trash" style="font-size:12px"></i>Очистить</button>
         </div>
-        <div class="chat-wrap">
-          <div class="chat-bubble-user">Разбери задачу и поставь в очередь</div>
-          <div class="chat-bubble-ai">
-            <div style="font-size:11px;color:var(--txt3);margin-bottom:7px;display:flex;align-items:center;gap:5px"><i class="ti ti-brain" style="font-size:12px;color:var(--acc)"></i>Главный ИИ</div>
-            <div style="margin-bottom:8px">Разобрал задачу. Структура ТЗ:</div>
-            <div style="background:var(--bg3);border-radius:var(--r8);padding:10px;font-size:12px;border:0.5px solid var(--bdr2)">
-              <div style="font-weight:500;color:var(--acc);margin-bottom:7px;font-size:11px">Задача #3 добавлена в очередь</div>
-              <div class="tz-row" style="margin-bottom:4px"><span class="tz-key">Тип:</span><span class="tz-val">Баннер + Email</span></div>
-              <div class="tz-row" style="margin-bottom:4px"><span class="tz-key">Приоритет:</span><span class="tz-val">#3</span></div>
-              <div class="tz-row"><span class="tz-key">Агент:</span><span class="tz-val">Баннер-агент → Верстальщик</span></div>
-            </div>
-          </div>
-        </div>
+        <div class="chat-wrap" id="ai-chat-wrap" style="min-height:200px;max-height:420px;overflow-y:auto"></div>
         <div class="chat-input-row">
-          <textarea class="form-textarea" rows="2" placeholder="Напишите сообщение…" style="flex:1"></textarea>
-          <button class="btn btn-primary" style="padding:0 16px;align-self:stretch"><i class="ti ti-send" style="font-size:16px"></i></button>
+          <textarea class="form-textarea" id="ai-input" rows="2" placeholder="Опишите задачу — баннер, письмо, статья…" style="flex:1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend()}"></textarea>
+          <button class="btn btn-primary" onclick="aiSend()" style="padding:0 16px;align-self:stretch">
+            <i class="ti ti-send" style="font-size:16px"></i>
+          </button>
         </div>
       </div>
 
@@ -584,34 +573,13 @@ html,body{height:100%;overflow:hidden}
            TAB: ТЕСТИРОВЩИК
       ══════════════════════════════════════════════ -->
       <div class="tab-panel" id="tab-tester">
-        <div class="wip-banner"><i class="ti ti-tool" style="font-size:14px;flex-shrink:0"></i>Тестировщик пока не подключён к бэкенду — QA работает автоматически при генерации писем.</div>
         <div class="agent-card">
           <div class="agent-avi" style="background:rgba(167,139,250,0.12)"><i class="ti ti-flask" style="font-size:20px;color:var(--purple)"></i></div>
-          <div><div class="agent-name">Тестировщик</div><div class="agent-model">gpt-4o · 2 линии проверки: структура + визуал</div></div>
+          <div><div class="agent-name">Тестировщик</div><div class="agent-model">Работает автоматически — проверяет баннеры и письма</div></div>
           <div class="agent-status-pill"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>онлайн</div>
         </div>
-        <div class="chat-toolbar">
-          <button class="btn"><i class="ti ti-trash" style="font-size:12px"></i>Очистить контекст</button>
-          <button class="btn"><i class="ti ti-download" style="font-size:12px"></i>Экспорт диалога</button>
-        </div>
-        <div class="qa-report">
-          <div class="qa-report-title"><i class="ti ti-clipboard-check" style="font-size:14px;margin-right:6px;color:var(--purple)"></i>QA отчёт — баннер_akciya_001.png</div>
-          <div class="qa-row ok"><i class="ti ti-check" style="font-size:13px"></i>Разрешение 600×350 @2x — OK</div>
-          <div class="qa-row ok"><i class="ti ti-check" style="font-size:13px"></i>Шаблон совпадает с ТЗ — OK</div>
-          <div class="qa-row ok"><i class="ti ti-check" style="font-size:13px"></i>Заголовок: 2 слова, в лимите</div>
-          <div class="qa-row warn-qa"><i class="ti ti-alert-triangle" style="font-size:13px"></i>Подпись: 11 слов (лимит 10)</div>
-          <div class="qa-verdict"><i class="ti ti-alert-circle" style="font-size:13px;margin-right:6px"></i>Вердикт: Принято с замечанием</div>
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:16px">
-          <button class="btn btn-primary" style="flex:1;justify-content:center"><i class="ti ti-check" style="font-size:12px"></i>Принять</button>
-          <button class="btn" style="flex:1;justify-content:center"><i class="ti ti-refresh" style="font-size:12px"></i>Перегенерировать</button>
-        </div>
-        <div class="chat-wrap">
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:8px">Дайте обратную связь тестировщику:</div>
-        </div>
-        <div class="chat-input-row">
-          <textarea class="form-textarea" rows="2" placeholder="Опишите что не так…" style="flex:1"></textarea>
-          <button class="btn btn-primary" style="padding:0 16px;align-self:stretch"><i class="ti ti-send" style="font-size:16px"></i></button>
+        <div id="tester-log-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+          <div style="font-size:12px;color:var(--txt3);text-align:center;padding:32px 0">Проверок пока нет — запусти задачу через Главный ИИ</div>
         </div>
       </div>
 
@@ -755,6 +723,7 @@ html,body{height:100%;overflow:hidden}
     if (id === 'banners')  { if (typeof renderTemplatePicker === 'function') renderTemplatePicker(); }
     if (id === 'history')  loadHistory();
     if (id === 'settings') loadAppSettings();
+    if (id === 'tester')   loadTesterLog();
     if (window.innerWidth <= 768) closeSidebar();
   }
 
@@ -1034,6 +1003,130 @@ html,body{height:100%;overflow:hidden}
   window.pushSubscribe   = pushSubscribe;
   window.pushUnsubscribe = pushUnsubscribe;
   window.pushTest        = pushTest;
+
+  // ── Главный ИИ ────────────────────────────────────────────────────
+  var aiMessages = [];
+
+  function aiAddMessage(role, html) {
+    var wrap = document.getElementById('ai-chat-wrap');
+    if (!wrap) return;
+    var div = document.createElement('div');
+    div.className = role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai';
+    if (role === 'ai') {
+      div.innerHTML = '<div style="font-size:11px;color:var(--txt3);margin-bottom:6px;display:flex;align-items:center;gap:5px"><i class="ti ti-brain" style="font-size:12px;color:var(--acc)"></i>Главный ИИ</div>' + html;
+    } else {
+      div.textContent = html;
+    }
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function aiClearChat() {
+    var wrap = document.getElementById('ai-chat-wrap');
+    if (wrap) wrap.innerHTML = '';
+    aiMessages = [];
+  }
+
+  function aiSend() {
+    var input = document.getElementById('ai-input');
+    var msg = (input.value || '').trim();
+    if (!msg) return;
+    input.value = '';
+    aiAddMessage('user', msg);
+    aiAddMessage('ai', '<span style="color:var(--txt3)">Анализирую задачу...</span>');
+
+    fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var wrap = document.getElementById('ai-chat-wrap');
+      var last = wrap.lastElementChild;
+      var typeLabel = { banner: 'Баннер', letter: 'Письмо', article: 'Статья', task: 'Задача' }[d.tz && d.tz.type] || 'Задача';
+      if (last) last.innerHTML =
+        '<div style="font-size:11px;color:var(--txt3);margin-bottom:6px;display:flex;align-items:center;gap:5px"><i class="ti ti-brain" style="font-size:12px;color:var(--acc)"></i>Главный ИИ</div>' +
+        '<div style="margin-bottom:8px">Принял задачу, запускаю pipeline...</div>' +
+        '<div style="background:var(--bg3);border-radius:var(--r8);padding:10px;font-size:12px;border:0.5px solid var(--bdr2)">' +
+          '<div style="font-weight:500;color:var(--acc);margin-bottom:6px;font-size:11px">Задача #' + d.taskId + '</div>' +
+          '<div class="tz-row"><span class="tz-key">Тип:</span><span class="tz-val">' + typeLabel + '</span></div>' +
+          '<div class="tz-row"><span class="tz-key">Название:</span><span class="tz-val">' + (d.tz && d.tz.title || '—') + '</span></div>' +
+          '<div class="tz-row" id="ai-task-status-' + d.taskId + '"><span class="tz-key">Статус:</span><span class="tz-val" style="color:var(--orange)">выполняется...</span></div>' +
+        '</div>';
+      // Следим за статусом задачи через SSE
+      aiWatchTask(d.taskId);
+    })
+    .catch(function(err) { aiAddMessage('ai', '❌ Ошибка: ' + err.message); });
+  }
+
+  function aiWatchTask(taskId) {
+    // Опрашиваем статус задачи каждые 3 сек
+    var interval = setInterval(function() {
+      fetch('/api/tasks/' + taskId)
+        .then(function(r) { return r.json(); })
+        .then(function(task) {
+          var el = document.getElementById('ai-task-status-' + taskId);
+          if (!el) { clearInterval(interval); return; }
+          var statusMap = { pending: 'в очереди', inprog: 'выполняется...', done: '✅ готово', error: '❌ ошибка', analyzing: 'анализирую...' };
+          var color = task.status === 'done' ? 'var(--green)' : task.status === 'error' ? 'var(--red)' : 'var(--orange)';
+          el.innerHTML = '<span class="tz-key">Статус:</span><span class="tz-val" style="color:' + color + '">' + (statusMap[task.status] || task.status) + '</span>';
+          if (task.status === 'done' || task.status === 'error') {
+            clearInterval(interval);
+            if (task.status === 'done' && task.result && task.result.draftUrl) {
+              el.insertAdjacentHTML('afterend', '<div class="tz-row"><span class="tz-key">Черновик:</span><a href="' + task.result.draftUrl + '" target="_blank" class="tz-val" style="color:var(--acc)">Открыть в Sendsay</a></div>');
+            }
+          }
+        }).catch(function() { clearInterval(interval); });
+    }, 3000);
+  }
+
+  window.aiSend = aiSend;
+  window.aiClearChat = aiClearChat;
+
+  // ── Тестировщик — лог проверок ────────────────────────────────────
+  function testerAddLog(entry) {
+    var wrap = document.getElementById('tester-log-wrap');
+    if (!wrap) return;
+    // Убираем заглушку если есть
+    if (wrap.children.length === 1 && wrap.children[0].tagName !== 'DIV'.toUpperCase()) return;
+    var empty = wrap.querySelector('[style*="Проверок пока нет"]');
+    if (empty) empty.remove();
+
+    var icons = { checking: '🔍', ok: '✅', fail: '❌', forced: '⚠️' };
+    var colors = { ok: 'var(--green)', fail: 'var(--red)', forced: 'var(--orange)', checking: 'var(--txt2)' };
+    var typeLabel = entry.type === 'banner' ? 'Баннер' : 'Письмо';
+
+    var div = document.createElement('div');
+    div.className = 'qa-report';
+    div.innerHTML =
+      '<div class="qa-report-title">' + icons[entry.status] + ' ' + typeLabel + ' · попытка ' + entry.attempt + ' · ' + (entry.ts || '') + '</div>' +
+      (entry.status === 'ok'
+        ? '<div class="qa-row ok"><i class="ti ti-check" style="font-size:13px"></i>Проверка пройдена</div>'
+        : entry.status === 'checking'
+          ? '<div class="qa-row" style="color:var(--txt2)"><i class="ti ti-loader" style="font-size:13px"></i>Проверяю...</div>'
+          : (entry.issues || []).map(function(iss) {
+              return '<div class="qa-row warn-qa"><i class="ti ti-alert-triangle" style="font-size:13px"></i>' + iss + '</div>';
+            }).join('') || '<div class="qa-row warn-qa">Неизвестная ошибка</div>'
+      );
+    wrap.insertBefore(div, wrap.firstChild);
+  }
+
+  // SSE поток от тестировщика
+  if (window.EventSource) {
+    var testerEvt = new EventSource('/api/ai/tester-events');
+    testerEvt.onmessage = function(e) {
+      try { testerAddLog(JSON.parse(e.data)); } catch(_) {}
+    };
+  }
+
+  // Загружаем существующий лог при открытии вкладки
+  function loadTesterLog() {
+    fetch('/api/ai/tester-log').then(function(r) { return r.json(); }).then(function(logs) {
+      logs.slice(0, 20).reverse().forEach(testerAddLog);
+    }).catch(function(){});
+  }
+  window.loadTesterLog = loadTesterLog;
 
   // Инициализация push при загрузке
   if ('serviceWorker' in navigator) {

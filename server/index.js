@@ -25,6 +25,7 @@ app.use('/api/tasks',    require('./routes/tasks'));
 app.use('/api/monitor',  require('./routes/monitor'));
 app.use('/api/push',     require('./routes/push'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/ai',       require('./routes/ai').router);
 
 // Версия — последний git коммит
 const REPO = path.join(__dirname, '..');
