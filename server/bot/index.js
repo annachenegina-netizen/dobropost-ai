@@ -304,6 +304,8 @@ async function executeTask(task, callbackMsg, taskId) {
   pendingTasks.delete(taskId);
 }
 
+const APP_URL = process.env.APP_URL || 'https://vladaiproject123.ru';
+
 async function executeBanner(tz, chatId, base, setStatus) {
   await setStatus('🎨 Анализирую текст и выбираю шаблон...');
 
@@ -328,11 +330,20 @@ async function executeBanner(tz, chatId, base, setStatus) {
 }
 
 async function executeLetter(tz, chatId, base, setStatus) {
-  await setStatus('📝 Верстаю письмо...');
+  // Сначала генерируем баннер
+  await setStatus('🎨 Генерирую баннер для письма...');
+  const bannerResp = await axios.post(`${base}/api/images/generate`, {
+    letterText: tz.text || tz.title,
+    templateId: tz.template || null,
+  });
+  const bannerUrl = bannerResp.data.imageUrl
+    ? (bannerResp.data.imageUrl.startsWith('/') ? APP_URL + bannerResp.data.imageUrl : bannerResp.data.imageUrl)
+    : null;
+  await setStatus(`🖼 Баннер готов — шаблон <code>${bannerResp.data.templateId}</code>\n📝 Верстаю письмо...`);
 
   const genResp = await axios.post(`${base}/api/letters/generate`, {
     letterText: tz.text || tz.title,
-    bannerUrl: '',
+    bannerUrl,
   });
 
   await setStatus('📤 Создаю черновик в Sendsay...');
@@ -345,6 +356,7 @@ async function executeLetter(tz, chatId, base, setStatus) {
 
   await setStatus(
     `✅ <b>Письмо готово</b>\n\n` +
+    `🖼 Баннер: ${bannerResp.data.templateId}\n` +
     `📧 Тема: ${genResp.data.subject}\n` +
     `💌 Черновик создан в Sendsay`,
   );
