@@ -3,14 +3,24 @@ const express = require('express');
 const { parseTzFromMessage } = require('../agents/claude');
 const { addTask, updateTask, getTask } = require('../taskStore');
 const { recall, remember } = require('../agents/rag');
-const { checkBanner, checkLetter, addTesterLog, getTesterLog, addTesterSseClient, removeTesterSseClient } = require('../agents/tester');
+const { checkBanner, checkLetter, getTesterLog, addTesterSseClient, removeTesterSseClient } = require('../agents/tester');
 const { pipelineStart, pipelineStep, pipelineFinish, getEntries, addClient, removeClient } = require('../agents/pipelineLog');
+const { runWithTester } = require('../agents/generator');
+const { pushFeedback } = require('../agents/feedbackQueue');
 const axios = require('axios');
 
 const router = express.Router();
 
 // Абсолютный URL для изображений в письмах (email-клиенты не понимают относительные пути)
 const APP_URL = process.env.APP_URL || 'https://vladaiproject123.ru';
+
+// POST /api/ai/tester-feedback — живой комментарий в процессе генерации
+router.post('/tester-feedback', (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ error: 'Нет сообщения' });
+  pushFeedback(message);
+  res.json({ ok: true });
+});
 
 // GET /api/ai/tester-log
 router.get('/tester-log', (req, res) => res.json(getTesterLog()));
@@ -84,7 +94,7 @@ async function _runPipeline(taskId, taskNum, tz, originalMessage) {
 
   if (tz.type === 'banner' || tz.type === 'letter') {
     pipelineStep(taskId, 'Шаг 1: генерация баннера');
-    const bannerData = await _runWithTester(
+    const bannerData = await runWithTester(
       'banner', taskId,
       async (prompt) => {
         const r = await axios.post(`${base}/api/images/generate`, {
@@ -104,7 +114,7 @@ async function _runPipeline(taskId, taskNum, tz, originalMessage) {
 
     if (tz.type === 'letter') {
       pipelineStep(taskId, 'Шаг 2: генерация письма');
-      const letterData = await _runWithTester(
+      const letterData = await runWithTester(
         'letter', taskId,
         async (prompt) => {
           const r = await axios.post(`${base}/api/letters/generate`, { letterText: prompt, bannerUrl: bannerAbsUrl });
@@ -142,46 +152,5 @@ async function _runPipeline(taskId, taskNum, tz, originalMessage) {
   }).catch(err => pipelineStep(taskId, `Память: не удалось сохранить — ${err.message}`, 'warn'));
 }
 
-// ─── Универсальный цикл: генерируем → тестируем → повторяем если нужно ───────
-async function _runWithTester(type, taskId, generate, test, basePrompt, log, maxAttempts = 3) {
-  const typeName = type === 'banner' ? 'баннер' : 'письмо';
-  let lastIssues = [];
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const prompt = lastIssues.length
-      ? `${basePrompt}\n\nИСПРАВЬ: ${lastIssues.join('; ')}`
-      : basePrompt;
-
-    log(taskId, `${typeName}: генерация (попытка ${attempt}/${maxAttempts})...`);
-    const data = await generate(prompt);
-
-    const info = type === 'banner'
-      ? `шаблон: ${data.templateId}, "${data.title}"`
-      : `тема: "${data.subject}"`;
-    log(taskId, `${typeName} сгенерирован — ${info}`);
-    log(taskId, `отправляю ${typeName} тестировщику...`);
-
-    addTesterLog({ type, taskId, attempt, status: 'checking', data: type === 'banner' ? data.imageUrl : data.subject });
-
-    const check = await test(data).catch(err => {
-      log(taskId, `Ошибка проверки ${typeName}: ${err.message}`, 'warn');
-      return { ok: true };
-    });
-
-    addTesterLog({ type, taskId, attempt, status: check.ok ? 'ok' : 'fail', issues: check.issues || [] });
-
-    if (check.ok) {
-      log(taskId, `тестировщик принял ${typeName} ✅`, 'ok');
-      return data;
-    }
-    const issuesText = (check.issues || []).join('; ');
-    log(taskId, `тестировщик отклонил ${typeName}: ${issuesText}`, 'error');
-    lastIssues = check.issues || [];
-  }
-
-  log(taskId, `исчерпаны попытки — беру последний вариант ${typeName}`, 'warn');
-  addTesterLog({ type, taskId, attempt: maxAttempts, status: 'forced', issues: ['Исчерпаны попытки'] });
-  return await generate(basePrompt);
-}
-
-module.exports = { router, addTesterLog };
+module.exports = { router };
