@@ -1,57 +1,73 @@
 // Точка входа — Express сервер
 const express = require('express');
 const session = require('express-session');
+const helmet  = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const { execSync } = require('child_process');
 require('dotenv').config();
 
-// Настройки из settings.json перекрывают .env (меняются через дашборд)
 require('./settings').apply();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Парсим JSON и форм-данные в запросах
+// Сервер за nginx — доверяем первому прокси (нужно для secure cookies и IP)
+app.set('trust proxy', 1);
+
+// ── Security заголовки (helmet) ───────────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: false, // отключаем CSP — он ломает inline-скрипты дашборда
+  crossOriginEmbedderPolicy: false,
+}));
+app.disable('x-powered-by'); // скрываем "X-Powered-By: Express"
+
+// ── Парсинг тела запросов ─────────────────────────────────────────────────────
 app.use(express.json());
 
-// ── Сессии ───────────────────────────────────────────────────────────────────
+// ── Rate limit на логин — не более 10 попыток за 15 минут с одного IP ─────────
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Слишком много попыток. Подождите 15 минут.' },
+  skipSuccessfulRequests: true, // успешный логин не считается
+});
+
+// ── Сессии ────────────────────────────────────────────────────────────────────
 app.use(session({
   name: 'sid',
   secret: process.env.SESSION_SECRET || 'change-me-in-env',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    httpOnly: true,      // JS на странице не может прочитать cookie
-    sameSite: 'strict',  // защита от CSRF
-    secure: process.env.NODE_ENV === 'production', // HTTPS в проде
+    httpOnly: true,     // JS не может прочитать cookie
+    sameSite: 'strict', // защита от CSRF
+    secure: process.env.NODE_ENV === 'production', // только HTTPS в проде
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
   },
 }));
 
-// ── Авторизация ───────────────────────────────────────────────────────────────
-// Пути без проверки сессии
-const PUBLIC_PATHS = new Set(['/login', '/login.html', '/api/auth/login']);
+// ── Auth роут — ДО middleware проверки сессии, с rate limit ──────────────────
+app.post('/api/auth/login', loginLimiter, require('./routes/auth').loginHandler);
+app.post('/api/auth/logout', require('./routes/auth').logoutHandler);
+app.get('/api/auth/check',  require('./routes/auth').checkHandler);
+
+// ── Проверка сессии — закрывает всё приложение ────────────────────────────────
+const PUBLIC_PATHS = new Set(['/login', '/login.html']);
 
 app.use((req, res, next) => {
-  // Служебные пути — всегда открыты
   if (PUBLIC_PATHS.has(req.path)) return next();
-  // Service worker — нужен браузеру без куки для push-уведомлений
-  if (req.path === '/sw.js') return next();
+  if (req.path === '/sw.js')      return next(); // service worker для push
 
-  // Есть сессия — пропускаем
   if (req.session && req.session.authenticated) return next();
 
-  // API → 401 (не делаем редирект, чтобы не ломать fetch-запросы)
   if (req.path.startsWith('/api/')) {
     return res.status(401).json({ error: 'Не авторизован' });
   }
-
-  // Всё остальное → редирект на страницу логина
   return res.redirect('/login');
 });
-
-// ── Auth роуты (должны быть ДО статики) ─────────────────────────────────────
-app.use('/api/auth', require('./routes/auth'));
 
 // ── Страница логина ───────────────────────────────────────────────────────────
 app.get('/login', (req, res) => {
@@ -59,7 +75,7 @@ app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/login.html'));
 });
 
-// ── Статика и API (только для авторизованных — middleware выше уже проверил) ──
+// ── Статика и API ─────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, '../client')));
 
 app.use('/api/images',   require('./routes/images'));
@@ -72,7 +88,6 @@ app.use('/api/push',     require('./routes/push'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/ai',       require('./routes/ai').router);
 
-// Версия — последний git коммит
 const REPO = path.join(__dirname, '..');
 app.get('/api/version', (req, res) => {
   try {
@@ -85,7 +100,6 @@ app.get('/api/version', (req, res) => {
   }
 });
 
-// Быстрый статус сервисов
 app.get('/api/status', (req, res) => {
   res.json({
     server:   true,
@@ -95,7 +109,6 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Главная страница — дашборд
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/index.html'));
 });
