@@ -17,8 +17,18 @@ app.set('trust proxy', 1);
 
 // ── Security заголовки (helmet) ───────────────────────────────────────────────
 app.use(helmet({
-  contentSecurityPolicy: false, // отключаем CSP — он ломает inline-скрипты дашборда
   crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  ["'self'"],
+      scriptSrc:   ["'self'", "'unsafe-inline'"], // дашборд использует inline-скрипты
+      styleSrc:    ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'],
+      fontSrc:     ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net'],
+      imgSrc:      ["'self'", 'data:', 'https:'],
+      connectSrc:  ["'self'"],
+      frameAncestors: ["'none'"], // запрещает встраивать в iframe
+    },
+  },
 }));
 app.disable('x-powered-by'); // скрываем "X-Powered-By: Express"
 
