@@ -281,6 +281,19 @@ html,body{height:100%;overflow:hidden}
 
 /* WIP — заглушки */
 .wip-banner{background:rgba(255,140,66,0.08);border:0.5px solid rgba(255,140,66,0.25);border-radius:var(--r8);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--orange)}
+.rem-card{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:var(--r10);padding:14px 16px;margin-bottom:10px;transition:opacity .2s}
+.rem-card-done{opacity:.55}
+.rem-card-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
+.rem-text{flex:1;font-size:13px;font-weight:600;color:var(--txt1);line-height:1.4}
+.rem-del-btn{background:none;border:none;color:var(--txt3);cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0;line-height:1}
+.rem-del-btn:hover{color:var(--red)}
+.rem-dt{font-size:12px;color:var(--acc);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.rem-slots-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.rem-slot{font-size:11px;padding:2px 7px;border-radius:4px;font-weight:500}
+.rem-slot-pending{background:var(--bg3);color:var(--txt3)}
+.rem-slot-sent{background:rgba(52,199,89,0.15);color:var(--green)}
+.rem-slot-skip{background:rgba(255,149,0,0.12);color:var(--orange)}
+.rem-meta{font-size:11px;color:var(--txt3)}
 .efir-day-btn{flex:1;justify-content:center;font-size:13px;opacity:.55}
 .efir-day-btn.active{background:var(--acc);color:#171717;opacity:1;border-color:var(--acc)}
 .wip-badge{font-size:9px;font-weight:600;background:rgba(255,140,66,0.12);color:var(--orange);border:0.5px solid rgba(255,140,66,0.3);border-radius:20px;padding:1px 7px;margin-left:6px;vertical-align:middle;white-space:nowrap}
@@ -393,6 +406,7 @@ html,body{height:100%;overflow:hidden}
       <div class="sb-divider"></div>
       <div class="sb-item" onclick="nav('history',this)"><i class="ti ti-history"></i>История</div>
       <div class="sb-item" onclick="nav('monitor',this)"><i class="ti ti-activity"></i>Мониторинг</div>
+      <div class="sb-item" onclick="nav('reminders',this)"><i class="ti ti-bell-ringing"></i>Напоминания</div>
       <div class="sb-item" onclick="nav('settings',this)"><i class="ti ti-settings"></i>Настройки</div>
     </nav>
     <div class="sb-footer">
@@ -765,6 +779,42 @@ html,body{height:100%;overflow:hidden}
       </div>
 
       <!-- ══════════════════════════════════════════════
+           TAB: НАПОМИНАНИЯ
+      ══════════════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-reminders">
+        <div style="max-width:660px">
+
+          <!-- Форма добавления -->
+          <div class="card" style="margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+              <i class="ti ti-bell-plus" style="font-size:16px;color:var(--acc)"></i>
+              <span style="font-size:13px;font-weight:600">Новое напоминание</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <input class="sett-input" id="rem-form-text" type="text" placeholder="Текст напоминания…" style="width:100%;box-sizing:border-box">
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <input class="sett-input" id="rem-form-dt" type="datetime-local" style="flex:1;min-width:200px">
+                <button class="btn btn-primary" onclick="addReminderFromForm(this)" style="flex-shrink:0">
+                  <i class="ti ti-plus" style="font-size:12px"></i>Добавить
+                </button>
+              </div>
+              <div style="font-size:11px;color:var(--txt3)">Или напишите боту: <i>«напомни про встречу 25 мая в 14:00»</i></div>
+            </div>
+          </div>
+
+          <!-- Список напоминаний -->
+          <div style="font-size:12px;font-weight:600;color:var(--txt2);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+            <i class="ti ti-list" style="font-size:13px"></i>История напоминаний
+            <button class="btn" style="margin-left:auto;padding:4px 10px;font-size:11px" onclick="loadReminders()">
+              <i class="ti ti-refresh" style="font-size:11px"></i>Обновить
+            </button>
+          </div>
+          <div id="rem-list"></div>
+
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════
            TAB: НАСТРОЙКИ
       ══════════════════════════════════════════════ -->
       <div class="tab-panel" id="tab-settings">
@@ -826,6 +876,7 @@ html,body{height:100%;overflow:hidden}
 <script src="/tabs/images.js"></script>
 <script src="/tabs/letters.js"></script>
 <script src="/tabs/articles.js"></script>
+<script src="/tabs/reminders.js"></script>
 <script>
 (function(){
   // ── Навигация ────────────────────────────────────────────────────
@@ -838,8 +889,9 @@ html,body{height:100%;overflow:hidden}
     if (id === 'banners')  { if (typeof renderTemplatePicker === 'function') renderTemplatePicker(); }
     if (id === 'history')  loadHistory();
     if (id === 'settings') loadAppSettings();
-    if (id === 'tester')   loadTesterLog();
-    if (id === 'ai')       loadPipelineLog();
+    if (id === 'tester')    loadTesterLog();
+    if (id === 'ai')        loadPipelineLog();
+    if (id === 'reminders') loadReminders();
     if (window.innerWidth <= 768) closeSidebar();
   }
 
@@ -1402,17 +1454,15 @@ html,body{height:100%;overflow:hidden}
     }).catch(function(){});
   };
 
-  // Enter в поле фидбека
+  // Enter в поле фидбека + загрузка логов при старте
   document.addEventListener('DOMContentLoaded', function() {
     var fbInput = document.getElementById('tester-fb-input');
     if (fbInput) fbInput.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') testerSendFeedback();
     });
+    loadPipelineLog();
+    loadTesterLog();
   });
-
-  // Загружаем логи сразу при старте (не ждём клика по вкладке)
-  loadPipelineLog();
-  loadTesterLog();
 
   // Инициализация push при загрузке
   if ('serviceWorker' in navigator) {

@@ -96,7 +96,8 @@ app.use('/api/tasks',    require('./routes/tasks'));
 app.use('/api/monitor',  require('./routes/monitor'));
 app.use('/api/push',     require('./routes/push'));
 app.use('/api/settings', require('./routes/settings'));
-app.use('/api/ai',       require('./routes/ai').router);
+app.use('/api/ai',        require('./routes/ai').router);
+app.use('/api/reminders', require('./routes/reminders'));
 
 const REPO = path.join(__dirname, '..');
 app.get('/api/version', (req, res) => {
@@ -125,5 +126,7 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`✅ Сервер запущен: http://localhost:${PORT}`);
-  require('./bot/index').startBot();
+  const { startBot, getBot } = require('./bot/index');
+  startBot();
+  require('./agents/reminders').startScheduler(getBot());
 });

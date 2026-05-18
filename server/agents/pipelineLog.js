@@ -2,8 +2,11 @@
 const fs   = require('fs');
 const path = require('path');
 
-const DATA_FILE = path.join(__dirname, '../data/pipeline-log.json');
+const DATA_DIR  = path.join(__dirname, '../data');
+const DATA_FILE = path.join(DATA_DIR, 'pipeline-log.json');
 const MAX       = 50;
+
+try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (_) {}
 
 // Загружаем с диска при старте
 let entries = [];

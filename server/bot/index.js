@@ -203,8 +203,39 @@ async function handleGroupMessage(msg, text, vladId) {
 
 // ─── Личное сообщение или пересланное ───────────────────────────────────────
 async function handleDirectMessage(msg, text, chatId, vladId) {
+  if (/напомни|напоминани|поставь.{0,25}напомн/i.test(text)) {
+    return handleReminderMessage(msg, text, chatId);
+  }
   const statusMsg = await bot.sendMessage(chatId, '⏳ Анализирую задачу...');
   await processText(text, msg, chatId, vladId, statusMsg.message_id);
+}
+
+// ─── Напоминание из личного чата ────────────────────────────────────────────
+async function handleReminderMessage(msg, text, chatId) {
+  const statusMsg = await bot.sendMessage(chatId, '⏰ Разбираю напоминание…');
+  try {
+    const PORT = process.env.PORT || 3000;
+    const resp = await axios.post(`http://localhost:${PORT}/api/reminders/parse`, {
+      text,
+      chatId: String(chatId),
+    });
+    const { reminder, parsed } = resp.data;
+    const dt = new Date(reminder.datetime).toLocaleString('ru-RU', {
+      timeZone: 'Europe/Moscow',
+      day: 'numeric', month: 'long',
+      hour: '2-digit', minute: '2-digit',
+    });
+    bot.editMessageText(
+      `✅ <b>Напоминание установлено</b>\n\n📌 ${parsed.text}\n📅 ${dt}\n\n🔔 Напомню за 3 дня, за 1 день, в день события, через 1 и 4 часа после.`,
+      { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: 'HTML' },
+    ).catch(() => {});
+  } catch (err) {
+    const errText = err.response?.data?.error || err.message;
+    bot.editMessageText(
+      `❌ Не смог разобрать напоминание: ${errText}`,
+      { chat_id: chatId, message_id: statusMsg.message_id },
+    ).catch(() => {});
+  }
 }
 
 // ─── Парсинг текста → ТЗ ────────────────────────────────────────────────────

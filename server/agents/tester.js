@@ -99,8 +99,11 @@ ${text}
 }
 
 // Лог проверок — последние 100 записей, доступен из любого роута
-const TESTER_DATA_FILE = path.join(__dirname, '../data/tester-log.json');
+const TESTER_DATA_DIR  = path.join(__dirname, '../data');
+const TESTER_DATA_FILE = path.join(TESTER_DATA_DIR, 'tester-log.json');
 const MAX_TESTER = 100;
+
+try { fs.mkdirSync(TESTER_DATA_DIR, { recursive: true }); } catch (_) {}
 
 let testerLog = [];
 try {
