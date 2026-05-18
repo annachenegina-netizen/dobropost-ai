@@ -6,8 +6,7 @@ const { remember, recall } = require('../agents/rag');
 const { checkBanner, checkLetter } = require('../agents/tester');
 const { pipelineStart, pipelineStep, pipelineFinish } = require('../agents/pipelineLog');
 const { runWithTester } = require('../agents/generator');
-
-const APP_URL = process.env.APP_URL || 'https://vladaiproject123.ru';
+const { uploadBannerToSendsay } = require('../agents/sendsay');
 
 const router = express.Router();
 
@@ -132,8 +131,10 @@ async function _executeBannerWithReview(base, letterText, templateId, taskId) {
     letterText,
     pipelineStep
   );
-  const absUrl = data.imageUrl.startsWith('/') ? APP_URL + data.imageUrl : data.imageUrl;
-  return { ...data, imageUrl: absUrl };
+  pipelineStep(taskId, 'Загружаю баннер в Sendsay CDN...');
+  const cdnUrl = await uploadBannerToSendsay(data.imageUrl);
+  pipelineStep(taskId, '✅ Баннер загружен в Sendsay CDN', 'ok');
+  return { ...data, imageUrl: cdnUrl };
 }
 
 async function _executeLetterWithReview(base, letterText, taskId) {

@@ -7,6 +7,7 @@ const path = require('path');
 const { OpenAI, toFile } = require('openai');
 const { parseTzFromMessage } = require('../agents/claude');
 const { addTask, updateTask, removeTask, getTask } = require('../taskStore');
+const { uploadBannerToSendsay } = require('../agents/sendsay');
 require('dotenv').config();
 
 let bot = null;
@@ -304,8 +305,6 @@ async function executeTask(task, callbackMsg, taskId) {
   pendingTasks.delete(taskId);
 }
 
-const APP_URL = process.env.APP_URL || 'https://vladaiproject123.ru';
-
 async function executeBanner(tz, chatId, base, setStatus) {
   await setStatus('🎨 Анализирую текст и выбираю шаблон...');
 
@@ -336,8 +335,9 @@ async function executeLetter(tz, chatId, base, setStatus) {
     letterText: tz.text || tz.title,
     templateId: tz.template || null,
   });
+  await setStatus('☁️ Загружаю баннер в Sendsay CDN...');
   const bannerUrl = bannerResp.data.imageUrl
-    ? (bannerResp.data.imageUrl.startsWith('/') ? APP_URL + bannerResp.data.imageUrl : bannerResp.data.imageUrl)
+    ? await uploadBannerToSendsay(bannerResp.data.imageUrl).catch(() => null)
     : null;
   await setStatus(`🖼 Баннер готов — шаблон <code>${bannerResp.data.templateId}</code>\n📝 Верстаю письмо...`);
 

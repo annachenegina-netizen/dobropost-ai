@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вход</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0f0f10;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #e8e8ea;
+  }
+
+  .card {
+    background: #18181b;
+    border: 0.5px solid #2a2a2e;
+    border-radius: 16px;
+    padding: 36px 32px 32px;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: #fdbd40;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #f4f4f5;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .sub {
+    font-size: 13px;
+    color: #71717a;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #a1a1aa;
+    margin-bottom: 6px;
+  }
+
+  input {
+    width: 100%;
+    background: #0f0f10;
+    border: 0.5px solid #3f3f46;
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 14px;
+    color: #f4f4f5;
+    outline: none;
+    transition: border-color .15s;
+    margin-bottom: 16px;
+    font-family: inherit;
+  }
+
+  input:focus { border-color: #fdbd40; }
+
+  button {
+    width: 100%;
+    background: #fdbd40;
+    color: #171717;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .15s;
+    font-family: inherit;
+    margin-top: 4px;
+  }
+
+  button:hover { opacity: 0.88; }
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  .error {
+    background: rgba(239,68,68,0.1);
+    border: 0.5px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    color: #f87171;
+    margin-bottom: 16px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">DobroPost</div>
+  <h1>Вход в систему</h1>
+  <p class="sub">Введите логин и пароль для доступа</p>
+
+  <div class="error" id="err"></div>
+
+  <form id="form">
+    <label for="username">Логин</label>
+    <input id="username" name="username" type="text" autocomplete="username" autofocus>
+
+    <label for="password">Пароль</label>
+    <input id="password" name="password" type="password" autocomplete="current-password">
+
+    <button type="submit" id="btn">Войти</button>
+  </form>
+</div>
+
+<script>
+  document.getElementById('form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('btn');
+    var err = document.getElementById('err');
+    err.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Проверяю...';
+
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+      }),
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, d: d }; }); })
+    .then(function(res) {
+      if (res.ok) {
+        window.location.replace('/');
+      } else {
+        err.textContent = res.d.error || 'Ошибка входа';
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Войти';
+        document.getElementById('password').value = '';
+        document.getElementById('password').focus();
+      }
+    })
+    .catch(function() {
+      err.textContent = 'Нет связи с сервером';
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Войти';
+    });
+  });
+</script>
+</body>
+</html>

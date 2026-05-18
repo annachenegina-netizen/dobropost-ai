@@ -7,12 +7,10 @@ const { checkBanner, checkLetter, getTesterLog, addTesterSseClient, removeTester
 const { pipelineStart, pipelineStep, pipelineFinish, getEntries, addClient, removeClient } = require('../agents/pipelineLog');
 const { runWithTester } = require('../agents/generator');
 const { pushFeedback } = require('../agents/feedbackQueue');
+const { uploadBannerToSendsay } = require('../agents/sendsay');
 const axios = require('axios');
 
 const router = express.Router();
-
-// Абсолютный URL для изображений в письмах (email-клиенты не понимают относительные пути)
-const APP_URL = process.env.APP_URL || 'https://vladaiproject123.ru';
 
 // POST /api/ai/tester-feedback — живой комментарий в процессе генерации
 router.post('/tester-feedback', (req, res) => {
@@ -107,10 +105,14 @@ async function _runPipeline(taskId, taskNum, tz, originalMessage) {
       enriched,
       pipelineStep
     );
-    // Делаем URL абсолютным для email-клиентов
-    const bannerAbsUrl = bannerData.imageUrl.startsWith('/') ? APP_URL + bannerData.imageUrl : bannerData.imageUrl;
+    pipelineStep(taskId, 'Загружаю баннер в Sendsay CDN...');
+    const bannerAbsUrl = await uploadBannerToSendsay(bannerData.imageUrl).catch(err => {
+      pipelineStep(taskId, `Не удалось загрузить в Sendsay: ${err.message}`, 'warn');
+      return null;
+    });
+    if (!bannerAbsUrl) throw new Error('Не удалось получить CDN-ссылку на баннер');
     result.banner = { ...bannerData, imageUrl: bannerAbsUrl };
-    pipelineStep(taskId, `✅ Баннер принят — шаблон: ${bannerData.templateId}, заголовок: ${bannerData.title}`, 'ok');
+    pipelineStep(taskId, `✅ Баннер принят и загружен в Sendsay — шаблон: ${bannerData.templateId}`, 'ok');
 
     if (tz.type === 'letter') {
       pipelineStep(taskId, 'Шаг 2: генерация письма');

@@ -4,6 +4,8 @@ const fs    = require('fs');
 const path  = require('path');
 require('dotenv').config();
 
+const BANNERS_DIR = path.join(__dirname, '../../client/images/output');
+
 const API_BASE = 'https://api.sendsay.ru/general/api/v100/json';
 
 let _cachedSession = null;
@@ -137,6 +139,15 @@ async function createDraftInSendsay(html, subject, preheader) {
   return { ok: true, url: draftUrl };
 }
 
+// Принимает относительный URL баннера (/images/output/banner_xxx.png),
+// загружает файл в Sendsay CDN и возвращает публичную ссылку
+async function uploadBannerToSendsay(imageUrl) {
+  const filename = path.basename(imageUrl.split('?')[0]);
+  const filePath = path.join(BANNERS_DIR, filename);
+  if (!fs.existsSync(filePath)) throw new Error(`Баннер не найден на диске: ${filePath}`);
+  return uploadToSendsay(filePath, filename);
+}
+
 function resetSession() { _cachedSession = null; }
 
-module.exports = { uploadToSendsay, createDraftInSendsay, resetSession };
+module.exports = { uploadToSendsay, uploadBannerToSendsay, createDraftInSendsay, resetSession };
