@@ -9,16 +9,19 @@
   <link rel="manifest" href="/manifest.json">
   <title>DobroPost AI</title>
   <script>
-    // Принудительная очистка старого SW-кеша при каждой загрузке страницы
+    // Очищаем все старые кеши
     if ('caches' in window) {
       caches.keys().then(function(names) {
         names.forEach(function(name) {
-          if (name !== 'dobropost-v4') caches.delete(name);
+          if (name !== 'dobropost-v5') caches.delete(name);
         });
       });
     }
-    // Если SW зарегистрирован — форсируем обновление
+    // Форсируем обновление SW; перезагружаемся когда новый SW активируется
     if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', function(e) {
+        if (e.data && e.data.type === 'SW_ACTIVATED') window.location.reload();
+      });
       navigator.serviceWorker.getRegistrations().then(function(regs) {
         regs.forEach(function(reg) { reg.update(); });
       });

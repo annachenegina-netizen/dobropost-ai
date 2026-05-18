@@ -1,5 +1,5 @@
 // Service Worker — сеть в приоритете, кэш как запасной вариант
-const CACHE = 'dobropost-v4';
+const CACHE = 'dobropost-v5';
 const PRECACHE = [];
 
 self.addEventListener('install', e => {
@@ -8,16 +8,19 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ type: 'window' }))
+      .then(list => list.forEach(client => client.postMessage({ type: 'SW_ACTIVATED' })))
   );
 });
 
 self.addEventListener('fetch', e => {
-  // API и POST — только сеть, без кэша
+  // API, POST и навигация (HTML-страницы) — только сеть, без кэша
   if (e.request.url.includes('/api/')) return;
   if (e.request.method !== 'GET') return;
+  if (e.request.mode === 'navigate') return;
 
   e.respondWith(
     fetch(e.request)
