@@ -92,7 +92,9 @@ async function uploadToSendsay(filePath, originalName) {
 
 // Создаёт черновик Email через API (два вызова issue.draft.set)
 async function createDraftInSendsay(html, subject, preheader) {
-  const name = subject || `Новый выпуск ${new Date().toLocaleString('ru')}`;
+  const ts   = new Date().toLocaleString('ru', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  const base = subject || 'Новый выпуск';
+  const name = `${base} (${ts})`;
 
   // Шаг 1: создаём черновик (relref:9 = тип Email)
   console.log('📨 Создаю черновик в Sendsay...');

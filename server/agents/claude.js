@@ -5,6 +5,19 @@ const OpenAI = require('openai');
 require('dotenv').config();
 
 const getClient = () => new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Надёжный парсер JSON из ответа AI: убирает markdown-обёртку и берёт первый объект
+function _parseJson(raw) {
+  let s = raw.replace(/^```[a-z]*\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+  const start = s.indexOf('{');
+  const end   = s.lastIndexOf('}');
+  if (start !== -1 && end !== -1) s = s.slice(start, end + 1);
+  try {
+    return JSON.parse(s);
+  } catch (e) {
+    throw new Error(`JSON parse error: ${e.message} | raw: ${s.slice(0, 200)}`);
+  }
+}
 // const getClient = () => new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }); // <- Claude
 
 // Описания шаблонов — AI выбирает из этого списка
@@ -79,7 +92,7 @@ ${letterText}
   });
 
   const raw = message.choices[0].message.content.trim();
-  const result = JSON.parse(raw);
+  const result = _parseJson(raw);
 
   if (forcedTemplateId) {
     result.templateId = forcedTemplateId;
@@ -123,7 +136,7 @@ ${letterText}
   });
 
   const raw = message.choices[0].message.content.trim();
-  const data = JSON.parse(raw);
+  const data = _parseJson(raw);
 
   const html = _buildEmailTemplate(data, bannerUrl);
   return { html, subject: data.subject, preheader: data.preheader };
@@ -487,9 +500,8 @@ ${templateList}
       temperature: 0.3,
       max_tokens: 600,
     });
-    const raw = response.choices[0].message.content.trim()
-      .replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-    return JSON.parse(raw);
+    const raw = response.choices[0].message.content.trim();
+    return _parseJson(raw);
   } catch (err) {
     console.error('[parseTz] Ошибка:', err.message);
     return { type: 'task', title: 'Задача', template: null, subtitle: null, text,
