@@ -281,6 +281,8 @@ html,body{height:100%;overflow:hidden}
 
 /* WIP — заглушки */
 .wip-banner{background:rgba(255,140,66,0.08);border:0.5px solid rgba(255,140,66,0.25);border-radius:var(--r8);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--orange)}
+.efir-day-btn{flex:1;justify-content:center;font-size:13px;opacity:.55}
+.efir-day-btn.active{background:var(--acc);color:#171717;opacity:1;border-color:var(--acc)}
 .wip-badge{font-size:9px;font-weight:600;background:rgba(255,140,66,0.12);color:var(--orange);border:0.5px solid rgba(255,140,66,0.3);border-radius:20px;padding:1px 7px;margin-left:6px;vertical-align:middle;white-space:nowrap}
 
 /* ── Pipeline log (AI tab) ──────────────────────────────────────── */
@@ -310,7 +312,8 @@ html,body{height:100%;overflow:hidden}
 /* ── Tester tab redesign ─────────────────────────────────────────── */
 .tester-wrap{display:flex;flex-direction:column;gap:10px}
 .tester-task{background:var(--bg2);border:0.5px solid var(--bdr2);border-radius:var(--r12);overflow:hidden}
-.tester-task-header{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg3)}
+.tester-task-header{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--bg3);cursor:pointer;user-select:none}
+.tester-task-header:hover{background:var(--bg4,var(--bg3))}
 .tester-task-num{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
 .tester-task-title{font-size:12px;color:var(--txt);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tester-task-ts{font-size:10px;color:var(--txt3);flex-shrink:0}
@@ -540,6 +543,53 @@ html,body{height:100%;overflow:hidden}
                 <button class="btn btn-primary" id="upload-sendsay-btn" onclick="uploadGeneratedBannerToSendsay()" style="flex:1;justify-content:center">
                   <i class="ti ti-cloud-upload" style="font-size:12px"></i>В Sendsay ↑
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Баннер эфира -->
+        <div class="card" style="margin-top:16px">
+          <div class="card-title" style="margin-bottom:14px">
+            <i class="ti ti-broadcast" style="font-size:14px;color:var(--acc)"></i>
+            Баннер эфира
+          </div>
+          <div class="two-col" style="align-items:start">
+            <div>
+              <div class="field-group">
+                <label class="field-label">Дата</label>
+                <input class="form-input" id="efir-date" type="date">
+              </div>
+              <div class="field-group" style="margin-top:12px">
+                <label class="field-label">Время (МСК)</label>
+                <input class="form-input" id="efir-time" type="text" placeholder="18:00" maxlength="5">
+              </div>
+              <div class="field-group" style="margin-top:12px">
+                <label class="field-label">Когда</label>
+                <div style="display:flex;gap:8px">
+                  <button class="btn efir-day-btn active" id="efir-day-zavtra" onclick="selectEfirDay('Завтра', this)">Завтра</button>
+                  <button class="btn efir-day-btn" id="efir-day-segodnya" onclick="selectEfirDay('Сегодня', this)">Сегодня</button>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-full" style="margin-top:14px" onclick="generateEfirBanner(this)">
+                <i class="ti ti-sparkles" style="font-size:13px"></i>Сгенерировать
+              </button>
+            </div>
+            <div>
+              <div id="efir-empty" class="empty-panel" style="min-height:150px">
+                <i class="ti ti-broadcast"></i>
+                <p>Введите дату и время<br>для баннера эфира</p>
+              </div>
+              <div id="efir-result" style="display:none">
+                <img class="banner-img" id="efir-img" src="" alt="Баннер эфира">
+                <div style="display:flex;gap:8px;margin-top:2px">
+                  <button class="btn" onclick="downloadEfirBanner()" style="flex:1;justify-content:center">
+                    <i class="ti ti-download" style="font-size:12px"></i>Скачать
+                  </button>
+                  <button class="btn btn-primary" id="efir-tg-btn" onclick="sendEfirToTelegram(this)" style="flex:1;justify-content:center">
+                    <i class="ti ti-brand-telegram" style="font-size:12px"></i>В Telegram
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1135,6 +1185,15 @@ html,body{height:100%;overflow:hidden}
     if (chevron) chevron.classList.toggle('open', !open);
   };
 
+  window.toggleTt = function(taskId) {
+    var checks = document.getElementById('ttc-' + taskId);
+    var chevron = document.getElementById('tt-ch-' + taskId);
+    if (!checks) return;
+    var open = checks.style.display !== 'none';
+    checks.style.display = open ? 'none' : 'flex';
+    if (chevron) chevron.classList.toggle('open', !open);
+  };
+
   // SSE поток pipeline
   if (window.EventSource) {
     var pipelineEvt = new EventSource('/api/ai/pipeline-events');
@@ -1226,10 +1285,11 @@ html,body{height:100%;overflow:hidden}
     div.className = 'tester-task';
     div.id = 'tt-' + taskId;
     div.innerHTML =
-      '<div class="tester-task-header">' +
+      '<div class="tester-task-header" onclick="toggleTt(\'' + taskId + '\')">' +
         '<span class="' + numCls + '">' + taskNum + ' — ' + typeLabel + '</span>' +
         '<span class="tester-task-title">' + esc(entry.taskTitle || '') + '</span>' +
         '<span class="tester-task-ts">' + (entry.ts || '') + '</span>' +
+        '<i class="ti ti-chevron-down pipeline-chevron open" id="tt-ch-' + taskId + '"></i>' +
       '</div>' +
       '<div class="tester-checks" id="ttc-' + taskId + '"></div>';
 
@@ -1303,8 +1363,20 @@ html,body{height:100%;overflow:hidden}
     if (empty) empty.style.display = '';
 
     fetch('/api/ai/tester-log').then(function(r) { return r.json(); }).then(function(logs) {
-      // Сортируем по времени (старые сначала) и добавляем
       logs.slice().reverse().forEach(testerAddCheck);
+      // Свернуть задачи у которых уже есть финальный результат (не "checking")
+      Object.keys(testerTaskMap).forEach(function(taskId) {
+        var checks = document.getElementById('ttc-' + taskId);
+        var chevron = document.getElementById('tt-ch-' + taskId);
+        if (!checks) return;
+        var hasActive = Array.from(checks.querySelectorAll('.tch-result')).some(function(el) {
+          return el.classList.contains('checking');
+        });
+        if (!hasActive) {
+          checks.style.display = 'none';
+          if (chevron) chevron.classList.remove('open');
+        }
+      });
     }).catch(function(){});
   }
   window.loadTesterLog = loadTesterLog;
@@ -1337,6 +1409,10 @@ html,body{height:100%;overflow:hidden}
       if (e.key === 'Enter') testerSendFeedback();
     });
   });
+
+  // Загружаем логи сразу при старте (не ждём клика по вкладке)
+  loadPipelineLog();
+  loadTesterLog();
 
   // Инициализация push при загрузке
   if ('serviceWorker' in navigator) {

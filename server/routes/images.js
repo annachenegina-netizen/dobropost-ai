@@ -3,6 +3,8 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
+const axios = require('axios');
+const FormData = require('form-data');
 const { analyzeLetter } = require('../agents/claude');
 
 const router = express.Router();
@@ -229,6 +231,160 @@ router.post('/generate', async (req, res) => {
 // GET /api/images/templates
 router.get('/templates', (req, res) => {
   res.json({ templates: Object.keys(TEMPLATE_CONFIG) });
+});
+
+// ── Баннер эфира ──────────────────────────────────────────────────────────────
+
+const RU_MONTHS = ['января','февраля','марта','апреля','мая','июня',
+                   'июля','августа','сентября','октября','ноября','декабря'];
+const RU_DAYS   = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+
+function formatEfirDate(dateStr) {
+  // dateStr: "2026-05-20"
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  return `${d} ${RU_MONTHS[m - 1]}, ${RU_DAYS[dt.getDay()]}`;
+}
+
+// Размеры рендера: 688×384 CSS-пикселей × deviceScaleFactor:2 = 1376×768 PNG (нативный размер шаблона)
+const EFIR_W = 688;
+const EFIR_H = 384;
+
+function buildEfirHtml(dateLabel, time, day) {
+  const bgPath = path.join(TEMPLATES_DIR, 'efir-blank.png');
+  const hasBg  = fs.existsSync(bgPath);
+
+  // Шаблон — JPEG несмотря на расширение .png
+  const bgData = hasBg
+    ? `data:image/jpeg;base64,${fs.readFileSync(bgPath).toString('base64')}`
+    : null;
+
+  const bgImg = bgData ? `<img class="bg" src="${bgData}">` : '';
+
+  // Fallback без шаблона — рисуем сами
+  const fallbackContent = hasBg ? '' : `
+  <div class="logo">DobroPost</div>
+  <div class="static-title">Еженедельный<br>прямой эфир</div>
+  <div class="tagline">Присоединяйтесь к нам!</div>`;
+
+  // Позиции (CSS px при 688×384) подобраны по шаблону 1376×768
+  const badgeTop   = hasBg ? 78  : 58;
+  const badgeLeft  = hasBg ? 37  : 32;
+  const dtTop      = hasBg ? 228 : 220;  // строка "Завтра/Сегодня в ЧЧ:ММ"
+  const dtLeft     = hasBg ? 37  : 32;
+  const dtFontSize = hasBg ? 32  : 34;
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { width:${EFIR_W}px; height:${EFIR_H}px; overflow:hidden;
+         font-family:Arial,'Helvetica Neue',sans-serif; }
+  .banner { position:relative; width:${EFIR_W}px; height:${EFIR_H}px;
+            background:#182A44; overflow:hidden; }
+  .bg { position:absolute; top:0; left:0; width:${EFIR_W}px; height:${EFIR_H}px; }
+
+  /* Fallback */
+  .logo { position:absolute; top:18px; left:32px; font-size:11px; font-weight:700;
+          letter-spacing:0.8px; color:#fdbd40; text-transform:uppercase; }
+  .static-title { position:absolute; top:140px; left:32px; width:300px;
+                  font-size:30px; font-weight:900; color:#fff; line-height:1.18; }
+  .tagline { position:absolute; bottom:28px; left:32px; font-size:12px;
+             color:rgba(255,255,255,0.48); }
+
+  /* Бейджи */
+  .badges { position:absolute; top:${badgeTop}px; left:${badgeLeft}px;
+            display:flex; gap:10px; align-items:center; }
+  .badge { display:inline-flex; align-items:center; border-radius:20px;
+           padding:4px 13px; font-size:12px; font-weight:600; white-space:nowrap; }
+  .badge-date { background:rgba(255,255,255,0.13); border:0.5px solid rgba(255,255,255,0.28); color:#fff; }
+  .badge-time { background:rgba(253,189,64,0.18); border:0.5px solid rgba(253,189,64,0.4); color:#fdbd40; }
+
+  /* Прямоугольник закрывает "в" из шаблона */
+  .cover-v { position:absolute; top:${dtTop}px; left:${dtLeft}px;
+             width:60px; height:${dtFontSize + 10}px; background:#182A44; }
+
+  /* Динамический текст поверх */
+  .day-time { position:absolute; top:${dtTop}px; left:${dtLeft}px;
+              font-size:${dtFontSize}px; font-weight:900; color:#fff;
+              line-height:1; letter-spacing:-0.5px; white-space:nowrap; }
+</style>
+</head>
+<body>
+<div class="banner">
+  ${bgImg}
+  ${fallbackContent}
+  <div class="badges">
+    <span class="badge badge-date">${dateLabel}</span>
+    <span class="badge badge-time">${time} МСК</span>
+  </div>
+  ${hasBg ? '<div class="cover-v"></div>' : ''}
+  <div class="day-time">${day} в ${time}</div>
+</div>
+</body>
+</html>`;
+}
+
+// POST /api/images/generate-efir
+router.post('/generate-efir', async (req, res) => {
+  try {
+    const { date, time, day = 'Завтра' } = req.body;
+    if (!date) return res.status(400).json({ error: 'Нет даты' });
+    if (!time) return res.status(400).json({ error: 'Нет времени' });
+
+    const dateLabel = formatEfirDate(date);
+    const html = buildEfirHtml(dateLabel, time, day);
+
+    const browser = await getBrowser();
+    const page = await browser.newPage();
+    try {
+      await page.setViewport({ width: EFIR_W, height: EFIR_H, deviceScaleFactor: 2 });
+      await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
+
+      const filename = `efir_${Date.now()}.png`;
+      const outputPath = path.join(OUTPUT_DIR, filename);
+      await page.screenshot({ path: outputPath, type: 'png', clip: { x:0, y:0, width:EFIR_W, height:EFIR_H } });
+
+      res.json({ imageUrl: `/images/output/${filename}`, dateLabel, time });
+    } finally {
+      await page.close();
+    }
+  } catch (err) {
+    console.error('❌ generate-efir:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/images/send-efir-telegram
+router.post('/send-efir-telegram', async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+    if (!imageUrl) return res.status(400).json({ error: 'Нет imageUrl' });
+
+    const token  = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_VLAD_CHAT_ID;
+    if (!token || !chatId) return res.status(500).json({ error: 'Telegram не настроен' });
+
+    const filename = path.basename(imageUrl.split('?')[0]);
+    const absPath  = path.join(OUTPUT_DIR, filename);
+    if (!fs.existsSync(absPath)) return res.status(404).json({ error: 'Файл не найден' });
+
+    const form = new FormData();
+    form.append('chat_id', chatId);
+    form.append('photo', fs.createReadStream(absPath), { filename });
+    form.append('caption', '🎙 Баннер эфира готов');
+
+    await axios.post(`https://api.telegram.org/bot${token}/sendPhoto`, form, {
+      headers: form.getHeaders(),
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('❌ send-efir-telegram:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

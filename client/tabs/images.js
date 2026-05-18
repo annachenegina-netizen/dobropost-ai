@@ -189,3 +189,82 @@ function copySendsayUrl() {
   const url = document.getElementById('sendsay-cdn-url').textContent;
   navigator.clipboard.writeText(url).then(() => showToast('Ссылка скопирована!'));
 }
+
+// ── Баннер эфира ──────────────────────────────────────────────────────────────
+
+let efirImageUrl = null;
+let efirDay = 'Завтра';
+
+function selectEfirDay(day, btn) {
+  efirDay = day;
+  document.querySelectorAll('.efir-day-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+async function generateEfirBanner(btn) {
+  const date = document.getElementById('efir-date').value;
+  const time = document.getElementById('efir-time').value.trim();
+  if (!date) { showToast('Выберите дату'); return; }
+  if (!/^\d{2}:\d{2}$/.test(time)) { showToast('Введите время в формате 18:00'); return; }
+
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Генерирую…';
+
+  try {
+    const res = await fetch('/api/images/generate-efir', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, time, day: efirDay }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка сервера');
+
+    efirImageUrl = data.imageUrl;
+    document.getElementById('efir-img').src = data.imageUrl + '?t=' + Date.now();
+    document.getElementById('efir-empty').style.display = 'none';
+    document.getElementById('efir-result').style.display = 'block';
+  } catch (err) {
+    showToast('Ошибка: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+  }
+}
+
+function downloadEfirBanner() {
+  if (!efirImageUrl) return;
+  const a = document.createElement('a');
+  a.href = efirImageUrl;
+  a.download = 'efir-banner.png';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('Скачивается…');
+}
+
+async function sendEfirToTelegram(btn) {
+  if (!efirImageUrl) { showToast('Сначала сгенерируй баннер'); return; }
+
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const res = await fetch('/api/images/send-efir-telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageUrl: efirImageUrl }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка');
+
+    showToast('Отправлено в Telegram!');
+    btn.innerHTML = '<i class="ti ti-check" style="font-size:12px"></i> Отправлено';
+    setTimeout(() => { btn.disabled = false; btn.innerHTML = origHtml; }, 2500);
+  } catch (err) {
+    showToast('Ошибка: ' + err.message);
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+  }
+}

@@ -99,8 +99,20 @@ ${text}
 }
 
 // Лог проверок — последние 100 записей, доступен из любого роута
-const testerLog = [];
+const TESTER_DATA_FILE = path.join(__dirname, '../data/tester-log.json');
+const MAX_TESTER = 100;
+
+let testerLog = [];
+try {
+  testerLog = JSON.parse(fs.readFileSync(TESTER_DATA_FILE, 'utf8'));
+  console.log(`🔍 Tester log загружен: ${testerLog.length} записей`);
+} catch (_) {}
+
 const testerSseClients = [];
+
+function _saveTesterLog() {
+  try { fs.writeFileSync(TESTER_DATA_FILE, JSON.stringify(testerLog)); } catch (_) {}
+}
 
 function addTesterLog(entry) {
   const task = entry.taskId ? getTask(entry.taskId) : null;
@@ -112,7 +124,8 @@ function addTesterLog(entry) {
     taskType:  task?.tz?.type  || entry.type,
   };
   testerLog.unshift(record);
-  if (testerLog.length > 100) testerLog.pop();
+  if (testerLog.length > MAX_TESTER) testerLog.pop();
+  _saveTesterLog();
   testerSseClients.forEach(res => {
     try { res.write(`data: ${JSON.stringify(record)}\n\n`); } catch (_) {}
   });
