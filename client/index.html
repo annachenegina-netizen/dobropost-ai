@@ -8,6 +8,22 @@
   <meta name="apple-mobile-web-app-title" content="DobroPost AI">
   <link rel="manifest" href="/manifest.json">
   <title>DobroPost AI</title>
+  <script>
+    // Принудительная очистка старого SW-кеша при каждой загрузке страницы
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        names.forEach(function(name) {
+          if (name !== 'dobropost-v4') caches.delete(name);
+        });
+      });
+    }
+    // Если SW зарегистрирован — форсируем обновление
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(reg) { reg.update(); });
+      });
+    }
+  </script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
